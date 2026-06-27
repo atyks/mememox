@@ -1,0 +1,501 @@
+window.EntryMemo = window.EntryMemo || {};
+
+window.EntryMemo.Storage = (function () {
+  /**
+   * --- DemoStorage ---
+   * メモリ上のデモデータを扱う
+   */
+  function DemoStorage() {
+    // デモ用データをディープコピー
+    this.data = JSON.parse(JSON.stringify(window.EntryMemo.DemoData || {}));
+  }
+
+  DemoStorage.prototype.listCategories = async function () {
+    const keys = Object.keys(this.data);
+    const hasTrash = keys.some(k => k === "ゴミ箱" || k === "trash");
+    if (!hasTrash) {
+      keys.push("ゴミ箱");
+    }
+    const compareCategories = window.EntryMemo.Utils.compareCategories;
+    return keys.sort(compareCategories);
+  };
+
+  DemoStorage.prototype.listEntries = async function (categoryName) {
+    if (!this.data[categoryName]) return [];
+    return Object.keys(this.data[categoryName]).map(fileName => {
+      return { fileName: fileName, mtime: Math.floor(Date.now() / 1000) };
+    }).sort((a, b) => a.fileName.localeCompare(b.fileName));
+  };
+
+  DemoStorage.prototype.readEntry = async function (categoryName, fileName) {
+    if (!this.data[categoryName] || !this.data[categoryName][fileName]) {
+      throw new Error(`デモデータが見つかりません: ${categoryName}/${fileName}`);
+    }
+    return this.data[categoryName][fileName];
+  };
+
+  DemoStorage.prototype.writeEntry = async function (categoryName, fileName, markdownText) {
+    if (!this.data[categoryName]) {
+      this.data[categoryName] = {};
+    }
+    this.data[categoryName][fileName] = markdownText;
+  };
+
+  DemoStorage.prototype.createEntry = async function (categoryName, fileName, markdownText) {
+    if (!this.data[categoryName]) {
+      this.data[categoryName] = {};
+    }
+    
+    let baseName = fileName;
+    if (baseName.endsWith(".md")) {
+      baseName = baseName.slice(0, -3);
+    }
+    
+    let targetFileName = `${baseName}.md`;
+    let counter = 1;
+    while (this.data[categoryName][targetFileName] !== undefined) {
+      counter++;
+      targetFileName = `${baseName}-${counter}.md`;
+    }
+    
+    this.data[categoryName][targetFileName] = markdownText;
+    return targetFileName;
+  };
+
+  DemoStorage.prototype.moveEntry = async function (oldCategoryName, oldFileName, newCategoryName, newFileName) {
+    if (!this.data[oldCategoryName] || this.data[oldCategoryName][oldFileName] === undefined) {
+      throw new Error(`デモデータが見つかりません: ${oldCategoryName}/${oldFileName}`);
+    }
+    const markdownText = this.data[oldCategoryName][oldFileName];
+    
+    // 新しいカテゴリーがなければ作成
+    if (!this.data[newCategoryName]) {
+      this.data[newCategoryName] = {};
+    }
+    
+    // 移動先のファイル名が重複していないか解決（重複時は連番を振る）
+    let baseName = newFileName;
+    if (baseName.endsWith(".md")) {
+      baseName = baseName.slice(0, -3);
+    }
+    let targetFileName = `${baseName}.md`;
+    let counter = 1;
+    // 自分自身と同じカテゴリーかつ同じファイル名でなければ重複チェック
+    while (this.data[newCategoryName][targetFileName] !== undefined && !(oldCategoryName === newCategoryName && targetFileName === oldFileName)) {
+      counter++;
+      targetFileName = `${baseName}-${counter}.md`;
+    }
+
+    this.data[newCategoryName][targetFileName] = markdownText;
+    
+    // 古いファイルを削除（移動先と異なる場合のみ）
+    if (oldCategoryName !== newCategoryName || oldFileName !== targetFileName) {
+      delete this.data[oldCategoryName][oldFileName];
+      // 古いカテゴリーが空になったらキーごと削除
+      if (Object.keys(this.data[oldCategoryName]).length === 0) {
+        delete this.data[oldCategoryName];
+      }
+    }
+    return targetFileName;
+  };
+
+  DemoStorage.prototype.deleteEntry = async function (categoryName, fileName) {
+    if (this.data[categoryName] && this.data[categoryName][fileName] !== undefined) {
+      delete this.data[categoryName][fileName];
+      if (Object.keys(this.data[categoryName]).length === 0) {
+        delete this.data[categoryName];
+      }
+    }
+  };
+
+  /**
+   * --- FileSystemStorage ---
+   * File System Access APIを使ってローカルファイルを読み書きする
+   */
+  function FileSystemStorage(directoryHandle) {
+    this.rootHandle = directoryHandle;
+    this.categoriesHandle = null;
+  }
+
+  /**
+   * 初期チェック: カテゴリー用フォルダが存在するか確認する
+   * @returns {Promise<boolean>} カテゴリーが存在すればtrue、なければfalse
+   */
+  FileSystemStorage.prototype.init = async function () {
+    this.categoriesHandle = this.rootHandle;
+    try {
+      let hasSubDir = false;
+      for await (const entry of this.rootHandle.values()) {
+        if (entry.kind === "directory" && !entry.name.startsWith(".")) {
+          hasSubDir = true;
+          break;
+        }
+      }
+      return hasSubDir;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  /**
+   * 初期ディレクトリ構造および初期空エントリーファイルを生成する
+   */
+  FileSystemStorage.prototype.createInitialStructure = async function () {
+    this.categoriesHandle = this.rootHandle;
+    
+    // inbox, thinking, work ディレクトリの作成
+    const inboxHandle = await this.rootHandle.getDirectoryHandle("inbox", { create: true });
+    const thinkingHandle = await this.rootHandle.getDirectoryHandle("thinking", { create: true });
+    const workHandle = await this.rootHandle.getDirectoryHandle("work", { create: true });
+    
+    // 初期エントリーファイルの作成
+    // inbox/inbox.md
+    const inboxFile = await inboxHandle.getFileHandle("inbox.md", { create: true });
+    const inboxWritable = await inboxFile.createWritable();
+    await inboxWritable.write(`# Inbox\n\n## 概要\n\n- ここはインボックスです。一時的なメモを置く場所です。\n\n## ブロック\n`);
+    await inboxWritable.close();
+    
+    // thinking/entry-memo-system.md
+    const thinkingFile = await thinkingHandle.getFileHandle("entry-memo-system.md", { create: true });
+    const thinkingWritable = await thinkingFile.createWritable();
+    await thinkingWritable.write(`# エントリー型メモシステム\n\n## 概要\n\n- エントリー型メモシステムの設計方針について記述します。\n\n## ブロック\n`);
+    await thinkingWritable.close();
+ 
+    // work/work-memo-environment.md
+    const workFile = await workHandle.getFileHandle("work-memo-environment.md", { create: true });
+    const workWritable = await workFile.createWritable();
+    await workWritable.write(`# 仕事用メモ環境\n\n## 概要\n\n- 仕事用メモの管理方針やTipsを記述します。\n\n## ブロック\n`);
+    await workWritable.close();
+  };
+
+  FileSystemStorage.prototype.listCategories = async function () {
+    if (!this.categoriesHandle) {
+      throw new Error("メモフォルダが初期化されていません。");
+    }
+    const categories = [];
+    for await (const entry of this.categoriesHandle.values()) {
+      if (entry.kind === "directory") {
+        categories.push(entry.name);
+      }
+    }
+    const hasTrash = categories.some(k => k === "ゴミ箱" || k === "trash");
+    if (!hasTrash) {
+      categories.push("ゴミ箱");
+    }
+    const compareCategories = window.EntryMemo.Utils.compareCategories;
+    return categories.sort(compareCategories);
+  };
+
+  FileSystemStorage.prototype.listEntries = async function (categoryName) {
+    if (!this.categoriesHandle) {
+      throw new Error("メモフォルダが初期化されていません。");
+    }
+    try {
+      const categoryHandle = await this.categoriesHandle.getDirectoryHandle(categoryName, { create: false });
+      const entries = [];
+      for await (const entry of categoryHandle.values()) {
+        if (entry.kind === "file" && entry.name.endsWith(".md")) {
+          let mtime = 0;
+          try {
+            const file = await entry.getFile();
+            mtime = Math.floor(file.lastModified / 1000);
+          } catch (_) {}
+          entries.push({
+            fileName: entry.name,
+            mtime: mtime
+          });
+        }
+      }
+      return entries.sort((a, b) => a.fileName.localeCompare(b.fileName));
+    } catch (e) {
+      if (e.name === "NotFoundError") {
+        return [];
+      }
+      throw e;
+    }
+  };
+
+  FileSystemStorage.prototype.readEntry = async function (categoryName, fileName) {
+    if (!this.categoriesHandle) {
+      throw new Error("メモフォルダが初期化されていません。");
+    }
+    const categoryHandle = await this.categoriesHandle.getDirectoryHandle(categoryName, { create: false });
+    const fileHandle = await categoryHandle.getFileHandle(fileName, { create: false });
+    const file = await fileHandle.getFile();
+    return await file.text();
+  };
+
+  FileSystemStorage.prototype.writeEntry = async function (categoryName, fileName, markdownText) {
+    if (!this.categoriesHandle) {
+      throw new Error("メモフォルダが初期化されていません。");
+    }
+    const categoryHandle = await this.categoriesHandle.getDirectoryHandle(categoryName, { create: false });
+    const fileHandle = await categoryHandle.getFileHandle(fileName, { create: false });
+    const writable = await fileHandle.createWritable();
+    await writable.write(markdownText);
+    await writable.close();
+  };
+
+  FileSystemStorage.prototype.createEntry = async function (categoryName, fileName, markdownText) {
+    if (!this.categoriesHandle) {
+      throw new Error("メモフォルダが初期化されていません。");
+    }
+    const categoryHandle = await this.categoriesHandle.getDirectoryHandle(categoryName, { create: true });
+    
+    let baseName = fileName;
+    if (baseName.endsWith(".md")) {
+      baseName = baseName.slice(0, -3);
+    }
+    
+    let targetFileName = `${baseName}.md`;
+    let counter = 1;
+    let fileExists = true;
+    
+    while (fileExists) {
+      try {
+        await categoryHandle.getFileHandle(targetFileName, { create: false });
+        counter++;
+        targetFileName = `${baseName}-${counter}.md`;
+      } catch (e) {
+        fileExists = false;
+      }
+    }
+    
+    const fileHandle = await categoryHandle.getFileHandle(targetFileName, { create: true });
+    const writable = await fileHandle.createWritable();
+    await writable.write(markdownText);
+    await writable.close();
+    
+    return targetFileName;
+  };
+
+  FileSystemStorage.prototype.moveEntry = async function (oldCategoryName, oldFileName, newCategoryName, newFileName) {
+    if (!this.categoriesHandle) {
+      throw new Error("メモフォルダが初期化されていません。");
+    }
+    const oldCategoryHandle = await this.categoriesHandle.getDirectoryHandle(oldCategoryName, { create: false });
+    const newCategoryHandle = await this.categoriesHandle.getDirectoryHandle(newCategoryName, { create: true });
+    
+    const fileHandle = await oldCategoryHandle.getFileHandle(oldFileName, { create: false });
+    
+    // 重複を解決
+    let baseName = newFileName;
+    if (baseName.endsWith(".md")) {
+      baseName = baseName.slice(0, -3);
+    }
+    let targetFileName = `${baseName}.md`;
+    let counter = 1;
+    let fileExists = true;
+    
+    while (fileExists) {
+      if (oldCategoryName === newCategoryName && targetFileName === oldFileName) {
+        fileExists = false; // 自分自身なので重複とみなさない
+        break;
+      }
+      try {
+        await newCategoryHandle.getFileHandle(targetFileName, { create: false });
+        counter++;
+        targetFileName = `${baseName}-${counter}.md`;
+      } catch (e) {
+        fileExists = false;
+      }
+    }
+
+    if (typeof fileHandle.move === "function") {
+      await fileHandle.move(newCategoryHandle, targetFileName);
+    } else {
+      // フォールバック: コピーして削除
+      const file = await fileHandle.getFile();
+      const text = await file.text();
+      
+      const newFileHandle = await newCategoryHandle.getFileHandle(targetFileName, { create: true });
+      const writable = await newFileHandle.createWritable();
+      await writable.write(text);
+      await writable.close();
+      
+      await oldCategoryHandle.removeEntry(oldFileName);
+    }
+    
+    return targetFileName;
+  };
+
+  FileSystemStorage.prototype.deleteEntry = async function (categoryName, fileName) {
+    if (!this.categoriesHandle) {
+      throw new Error("メモフォルダが初期化されていません。");
+    }
+    const categoryHandle = await this.categoriesHandle.getDirectoryHandle(categoryName, { create: false });
+    await categoryHandle.removeEntry(fileName);
+  };
+
+
+  /**
+   * --- ServerStorage ---
+   * Webサーバー環境のAPIを経由してデータを読み書きする
+   */
+  function ServerStorage(apiUrl) {
+    this.apiUrl = apiUrl;
+    this.revisions = {}; // { "category/file.md": "sha256:..." }
+  }
+
+  /**
+   * 共通の API リクエストヘルパー (JSON入出力を統一)
+   */
+  ServerStorage.prototype._request = async function (action, params = {}, options = {}) {
+    let url = `${this.apiUrl}?action=${action}`;
+    let fetchOptions = {};
+
+    if (options.method === "POST") {
+      fetchOptions.method = "POST";
+      fetchOptions.headers = {
+        "Content-Type": "application/json"
+      };
+      fetchOptions.body = JSON.stringify(params);
+    } else {
+      const query = new URLSearchParams(params).toString();
+      if (query) url += `&${query}`;
+    }
+
+    const res = await fetch(url, fetchOptions);
+    if (!res.ok) {
+      let errMsg = "サーバーとの通信エラーが発生しました。";
+      try {
+        const errJson = await res.json();
+        if (errJson && errJson.error) errMsg = errJson.error;
+      } catch (_) {}
+      throw new Error(errMsg);
+    }
+
+    return await res.json();
+  };
+
+  /**
+   * クライアント側での SHA-256 ハッシュ値 (revision) 計算ヘルパー (Web Crypto API 使用)
+   */
+  ServerStorage.prototype._calculateHash = async function (message) {
+    const msgBuffer = new TextEncoder().encode(message);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return 'sha256:' + hashHex;
+  };
+
+  /**
+   * 初期化 (ダミー化。一括ロードはセキュリティ上廃止)
+   */
+  ServerStorage.prototype.init = async function () {
+    return true;
+  };
+
+  ServerStorage.prototype.listCategories = async function () {
+    const categories = await this._request("list_categories");
+    const hasTrash = categories.some(k => k === "ゴミ箱" || k === "trash");
+    if (!hasTrash) {
+      categories.push("ゴミ箱");
+    }
+    const compareCategories = window.EntryMemo.Utils.compareCategories;
+    return categories.sort(compareCategories);
+  };
+
+  ServerStorage.prototype.listEntries = async function (categoryName) {
+    const entries = await this._request("list_entries", { category: categoryName });
+    return entries.sort((a, b) => a.fileName.localeCompare(b.fileName));
+  };
+
+  ServerStorage.prototype.readEntry = async function (categoryName, fileName) {
+    const res = await this._request("read_entry", { category: categoryName, file: fileName });
+    if (!res.ok || !res.data) {
+      throw new Error(res.error || "エントリーの読み込みに失敗しました。");
+    }
+    
+    // リビジョン情報を記録
+    const key = `${categoryName}/${fileName}`;
+    this.revisions[key] = res.data.revision;
+    
+    return res.data.content;
+  };
+
+  ServerStorage.prototype.writeEntry = async function (categoryName, fileName, markdownText) {
+    const key = `${categoryName}/${fileName}`;
+    const baseRevision = this.revisions[key] || "";
+
+    const res = await this._request("write_entry", {
+      category: categoryName,
+      file: fileName,
+      content: markdownText,
+      baseRevision: baseRevision
+    }, { method: "POST" });
+
+    if (!res.ok) {
+      throw new Error(res.error || "エントリーの保存に失敗しました。");
+    }
+
+    // 保存したコンテンツのハッシュを再計算してローカルリビジョンを更新
+    this.revisions[key] = await this._calculateHash(markdownText);
+  };
+
+  ServerStorage.prototype.createEntry = async function (categoryName, fileName, markdownText) {
+    const res = await this._request("create_entry", {
+      category: categoryName,
+      file: fileName,
+      content: markdownText
+    }, { method: "POST" });
+
+    if (!res.ok || !res.fileName) {
+      throw new Error(res.error || "新規エントリーの作成に失敗しました。");
+    }
+
+    const actualFileName = res.fileName;
+    const key = `${categoryName}/${actualFileName}`;
+    
+    // 新規作成されたファイルのハッシュを登録
+    this.revisions[key] = await this._calculateHash(markdownText);
+    
+    return actualFileName;
+  };
+
+  ServerStorage.prototype.moveEntry = async function (oldCategoryName, oldFileName, newCategoryName, newFileName) {
+    const res = await this._request("move_entry", {
+      old_category: oldCategoryName,
+      old_file: oldFileName,
+      new_category: newCategoryName,
+      new_file: newFileName
+    }, { method: "POST" });
+
+    if (!res.ok || !res.fileName) {
+      throw new Error(res.error || "エントリーの移動に失敗しました。");
+    }
+
+    const actualFileName = res.fileName;
+    
+    // リビジョンの引越し
+    const oldKey = `${oldCategoryName}/${oldFileName}`;
+    const newKey = `${newCategoryName}/${actualFileName}`;
+    if (this.revisions[oldKey]) {
+      this.revisions[newKey] = this.revisions[oldKey];
+      delete this.revisions[oldKey];
+    }
+    
+    return actualFileName;
+  };
+
+  ServerStorage.prototype.deleteEntry = async function (categoryName, fileName) {
+    const res = await this._request("delete_entry", {
+      category: categoryName,
+      file: fileName
+    }, { method: "POST" });
+
+    if (!res.ok) {
+      throw new Error(res.error || "エントリーの削除に失敗しました。");
+    }
+
+    // リビジョンの削除
+    const key = `${categoryName}/${fileName}`;
+    delete this.revisions[key];
+  };
+
+  return {
+    DemoStorage,
+    FileSystemStorage,
+    ServerStorage
+  };
+})();
