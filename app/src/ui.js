@@ -1628,18 +1628,21 @@ window.EntryMemo.UI = (function () {
       elements.currentModeBadge.textContent = "デモモード";
       elements.currentModeBadge.className = "badge-demo";
       elements.openFolderBtn.style.display = "block";
-      elements.openFolderBtn.textContent = "フォルダを開く";
+      elements.openFolderBtn.textContent = "📁";
+      elements.openFolderBtn.title = "フォルダを開く";
     } else {
       if (type === "server") {
         elements.currentModeBadge.textContent = "オンライン";
         elements.currentModeBadge.className = "badge-server";
         elements.openFolderBtn.style.display = "block";
-        elements.openFolderBtn.textContent = "ローカルフォルダを開く";
+        elements.openFolderBtn.textContent = "📁";
+        elements.openFolderBtn.title = "ローカルフォルダを開く";
       } else {
         elements.currentModeBadge.textContent = `ローカル: ${folderName}`;
         elements.currentModeBadge.className = "badge-local";
         elements.openFolderBtn.style.display = "block";
-        elements.openFolderBtn.textContent = "別のフォルダを開く";
+        elements.openFolderBtn.textContent = "📁";
+        elements.openFolderBtn.title = "別のフォルダを開く";
       }
     }
   }
