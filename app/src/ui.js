@@ -25,6 +25,9 @@ window.EntryMemo.UI = (function () {
   // 編集・作成・マージ後にフォーカスを合わせるブロックID
   let lastFocusedBlockId = null;
 
+  // ブロックモーダル内でのEnterキー連続入力回数
+  let blockModalEnterCount = 0;
+
   // 入力フォームがアクティブかどうかを判定する関数
   const isTextInputActive = () => {
     const activeEl = document.activeElement;
@@ -171,6 +174,7 @@ window.EntryMemo.UI = (function () {
       
       // 追加のUIテキスト (ja)
       addBlockBtn: "ブロックを追加",
+      addEntryBtn: "エントリーを追加",
       online: "オンライン",
       openLocalFolder: "ローカルフォルダを開く",
       local: "ローカル",
@@ -333,6 +337,7 @@ window.EntryMemo.UI = (function () {
       
       // 追加のUIテキスト (en)
       addBlockBtn: "Add Block",
+      addEntryBtn: "Add Entry",
       online: "Online",
       openLocalFolder: "Open Local Folder",
       local: "Local",
@@ -716,6 +721,7 @@ window.EntryMemo.UI = (function () {
       // ブロック一覧
       blocksList: document.getElementById("blocks-list"),
       addBlockBtnTop: document.getElementById("add-block-btn-top"),
+      addEntryBtnFab: document.getElementById("add-entry-btn-fab"),
       
       // モーダル
       modalOverlay: document.getElementById("modal-overlay"),
@@ -935,6 +941,7 @@ window.EntryMemo.UI = (function () {
    * すべてのモーダルを閉じる
    */
   function closeModal() {
+    blockModalEnterCount = 0;
     elements.modalOverlay.style.display = "none";
     elements.blockModal.style.display = "none";
     elements.moveModal.style.display = "none";
@@ -1171,6 +1178,11 @@ window.EntryMemo.UI = (function () {
       openBlockModal(null);
     };
     elements.addBlockBtnTop.addEventListener("click", triggerAddBlock);
+    if (elements.addEntryBtnFab) {
+      elements.addEntryBtnFab.addEventListener("click", () => {
+        openNewEntryModal();
+      });
+    }
 
     // エントリーの削除
     elements.entryDeleteBtn.addEventListener("click", () => {
@@ -1934,10 +1946,32 @@ window.EntryMemo.UI = (function () {
 
     // ブロックモーダル内のショートカット
     const handleModalShortcut = (e) => {
+      if (e.key === "Enter" && !e.isComposing) {
+        if (e.target === elements.blockInputBody) {
+          blockModalEnterCount++;
+          if (blockModalEnterCount === 3) {
+            e.preventDefault();
+            e.stopPropagation();
+            blockModalEnterCount = 0;
+            const val = elements.blockInputBody.value;
+            if (val.endsWith("\n\n")) {
+              elements.blockInputBody.value = val.slice(0, -2);
+            } else if (val.endsWith("\n")) {
+              elements.blockInputBody.value = val.slice(0, -1);
+            }
+            elements.blockModalSaveBtn.click();
+            return;
+          }
+        }
+      } else if (!e.isComposing) {
+        blockModalEnterCount = 0;
+      }
+
       if ((e.ctrlKey || e.metaKey)) {
         if (e.key === "Enter") {
           e.preventDefault();
           e.stopPropagation();
+          blockModalEnterCount = 0;
           elements.blockModalSaveBtn.click();
         } else if (e.key === "s" || e.key === "S") {
           e.preventDefault();
@@ -2171,6 +2205,7 @@ window.EntryMemo.UI = (function () {
    * ブロックの追加・編集モーダルを開く
    */
   function openBlockModal(block = null) {
+    blockModalEnterCount = 0;
     if (block) {
       elements.blockModalTitle.textContent = t("editBlockTitle", "ブロックを編集");
       elements.blockModal.dataset.editingBlockId = block.id;
