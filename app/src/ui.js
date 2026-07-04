@@ -33,10 +33,108 @@ window.EntryMemo.UI = (function () {
     return tag === "input" || tag === "textarea" || activeEl.isContentEditable;
   };
 
+  // デフォルトのキーマップ定義
+  const DefaultKeymaps = {
+    help: { code: "Slash", shift: true },
+    toggleFavorite: { key: ["s", "S"] },
+    showAllEntries: { code: "KeyH", ctrl: true },
+    toggleSwipe: { code: "KeyL", ctrl: true },
+    selectAllBlocks: { code: "KeyA", ctrl: true },
+    batchDelete: { code: "KeyD", ctrl: true },
+    togglePreview: { code: "KeyP", ctrl: true },
+    newEntry: { code: "KeyC", ctrl: true },
+    openFolder: { code: "KeyO", ctrl: true },
+    editEntry: { code: "KeyE", ctrl: true },
+    editSummary: { code: "KeyI", ctrl: true },
+    navigateCategoryNextCtrl: { code: "KeyJ", ctrl: true },
+    navigateCategoryPrevCtrl: { code: "KeyK", ctrl: true },
+    navigateEntryNext: { code: "ArrowDown", alt: true },
+    navigateEntryPrev: { code: "ArrowUp", alt: true },
+    toggleViewBoard: { code: "ArrowLeft", alt: true },
+    toggleViewThread: { code: "ArrowRight", alt: true },
+    
+    // カテゴリー一覧画面
+    categoryNavigateNext: { code: "KeyJ" },
+    categoryNavigatePrev: { code: "KeyK" },
+    categoryOpenEntry: { code: "Enter" },
+    categoryDeleteEntry: [
+      { code: "KeyD", shift: true },
+      { code: "Delete" }
+    ],
+
+    // 詳細画面
+    cardNavigateNext: { code: "KeyJ" },
+    cardNavigatePrev: { code: "KeyK" },
+    cardToggleExpand: { code: "Space" },
+    cardEdit: [
+      { code: "Enter" },
+      { code: "KeyE" }
+    ],
+    cardMoveOrMerge: { code: "KeyM" },
+    cardDelete: { code: "KeyD" },
+    cardSelectMerge: { code: "KeyX" },
+    cardAddBlock: { code: "KeyA" },
+    deleteEntry: [
+      { code: "KeyD", shift: true },
+      { code: "Delete" }
+    ],
+  };
+
+  let activeKeymaps = DefaultKeymaps;
+
+  // キー入力イベントとキーマップ設定とのマッチング判定
+  function matchKey(e, mapping) {
+    if (!mapping) return false;
+    if (Array.isArray(mapping)) {
+      return mapping.some(m => matchKey(e, m));
+    }
+    const expectedCtrl = !!mapping.ctrl;
+    const actualCtrl = !!(e.ctrlKey || e.metaKey);
+    if (expectedCtrl !== actualCtrl) return false;
+
+    const expectedShift = !!mapping.shift;
+    const actualShift = !!e.shiftKey;
+    if (expectedShift !== actualShift) return false;
+
+    const expectedAlt = !!mapping.alt;
+    const actualAlt = !!e.altKey;
+    if (expectedAlt !== actualAlt) return false;
+
+    if (mapping.code) {
+      const codes = Array.isArray(mapping.code) ? mapping.code : [mapping.code];
+      if (codes.includes(e.code)) return true;
+    }
+    if (mapping.key) {
+      const keys = Array.isArray(mapping.key) ? mapping.key : [mapping.key];
+      if (keys.includes(e.key)) return true;
+    }
+    return false;
+  }
+
+  function match(e, actionName) {
+    return matchKey(e, activeKeymaps[actionName]);
+  }
+
+  // 外部カスタマイズキーマップファイルの非同期読み込み
+  function initKeymaps() {
+    const script = document.createElement("script");
+    script.src = "src/keymaps.js";
+    script.onload = () => {
+      if (window.EntryMemo && window.EntryMemo.Keymaps) {
+        activeKeymaps = Object.assign({}, DefaultKeymaps, window.EntryMemo.Keymaps);
+      }
+    };
+    script.onerror = () => {
+      // 読み込めない場合はデフォルトのまま
+    };
+    document.head.appendChild(script);
+  }
+
   /**
    * UIの初期化
    */
   function init() {
+    initKeymaps();
     elements = {
       appContainer: document.getElementById("app-container"),
       mainContent: document.getElementById("main-content"),
@@ -1003,14 +1101,14 @@ window.EntryMemo.UI = (function () {
       const isCategoryViewActive = elements.categoryEntriesView.style.display === "flex";
 
       // ? (Shift + /) でヘルプパネルを開閉
-      if (e.code === "Slash" && e.shiftKey && !inputActive) {
+      if (match(e, "help") && !inputActive) {
         e.preventDefault();
         toggleHelpPanel();
         return;
       }
 
       // S キーでのお気に入り（Pickup）トグル
-      if ((e.key === "s" || e.key === "S") && !inputActive && !isModalOpen && !isSummaryEditing) {
+      if (match(e, "toggleFavorite") && !inputActive && !isModalOpen && !isSummaryEditing) {
         if (elements.entryDetailView.style.display === "flex") {
           const currentEntry = window.EntryMemo.App.getCurrentEntry();
           if (currentEntry) {
@@ -1034,111 +1132,105 @@ window.EntryMemo.UI = (function () {
         return;
       }
 
-      // Ctrl または Cmd を伴うショートカット
-      if (e.ctrlKey || e.metaKey) {
-        if (e.code === "KeyH") {
-          if (!inputActive && !isModalOpen && !isSummaryEditing) {
+      // Ctrl または Cmd を伴うショートカット、またはそれらに対応するマッピング
+      if (match(e, "showAllEntries")) {
+        if (!inputActive && !isModalOpen && !isSummaryEditing) {
+          e.preventDefault();
+          window.EntryMemo.App.showAllEntriesListView();
+          return;
+        }
+      }
+
+      if (match(e, "toggleSwipe")) {
+        if (!inputActive && !isModalOpen && !isSummaryEditing) {
+          e.preventDefault();
+          window.EntryMemo.App.handleSwipeToggle();
+          return;
+        }
+      }
+
+      if (match(e, "selectAllBlocks")) {
+        if (!inputActive && !isModalOpen && !isSummaryEditing) {
+          const checkboxes = Array.from(elements.blocksList.querySelectorAll(".block-select-checkbox"));
+          if (checkboxes.length > 0) {
             e.preventDefault();
-            window.EntryMemo.App.showAllEntriesListView();
-            return;
+            const allChecked = checkboxes.every(cb => cb.checked);
+            checkboxes.forEach(cb => {
+              cb.checked = !allChecked;
+            });
+            updateMergeActionBar();
           }
+          return;
         }
+      }
 
-        if (e.code === "KeyL") {
-          if (!inputActive && !isModalOpen && !isSummaryEditing) {
+      if (match(e, "batchDelete")) {
+        if (!inputActive && !isModalOpen && !isSummaryEditing) {
+          if (performBatchDelete()) {
             e.preventDefault();
-            window.EntryMemo.App.handleSwipeToggle();
-            return;
           }
+          return;
         }
+      }
 
-        if (e.code === "KeyA") {
-          if (!inputActive && !isModalOpen && !isSummaryEditing) {
-            const checkboxes = Array.from(elements.blocksList.querySelectorAll(".block-select-checkbox"));
-            if (checkboxes.length > 0) {
-              e.preventDefault();
-              const allChecked = checkboxes.every(cb => cb.checked);
-              checkboxes.forEach(cb => {
-                cb.checked = !allChecked;
-              });
-              updateMergeActionBar();
-            }
-            return;
-          }
-        }
-
-        if (e.code === "KeyD") {
-          if (!inputActive && !isModalOpen && !isSummaryEditing) {
-            if (performBatchDelete()) {
-              e.preventDefault();
-            }
-            return;
-          }
-        }
-
-        if (e.code === "KeyP") {
-          // Ctrl + P: Markdown表示/非表示 (トグル)
-          if (!inputActive && !isModalOpen && !isSummaryEditing) {
-            e.preventDefault();
-            if (isPreviewOpen) {
-              closeMarkdownPreviewPanel();
-            } else {
-              if (elements.entryDetailView.style.display === "flex") {
-                const currentEntry = window.EntryMemo.App.getCurrentEntry();
-                if (currentEntry) {
-                  const md = window.EntryMemo.Markdown.serializeEntry(currentEntry);
-                  openMarkdownPreviewPanel(md);
-                }
-              } else if (isCategoryViewActive) {
-                const cards = elements.categoryEntriesList.querySelectorAll(".inline-entry-item");
-                if (focusedEntryIndex >= 0 && focusedEntryIndex < cards.length) {
-                  const card = cards[focusedEntryIndex];
-                  const categoryName = card.dataset.categoryName;
-                  const fileName = card.dataset.fileName;
-                  if (categoryName && fileName) {
-                    window.EntryMemo.App.handleShowMarkdownPreview(categoryName, fileName);
-                  }
+      if (match(e, "togglePreview")) {
+        if (!inputActive && !isModalOpen && !isSummaryEditing) {
+          e.preventDefault();
+          if (isPreviewOpen) {
+            closeMarkdownPreviewPanel();
+          } else {
+            if (elements.entryDetailView.style.display === "flex") {
+              const currentEntry = window.EntryMemo.App.getCurrentEntry();
+              if (currentEntry) {
+                const md = window.EntryMemo.Markdown.serializeEntry(currentEntry);
+                openMarkdownPreviewPanel(md);
+              }
+            } else if (isCategoryViewActive) {
+              const cards = elements.categoryEntriesList.querySelectorAll(".inline-entry-item");
+              if (focusedEntryIndex >= 0 && focusedEntryIndex < cards.length) {
+                const card = cards[focusedEntryIndex];
+                const categoryName = card.dataset.categoryName;
+                const fileName = card.dataset.fileName;
+                if (categoryName && fileName) {
+                  window.EntryMemo.App.handleShowMarkdownPreview(categoryName, fileName);
                 }
               }
             }
-            return;
           }
+          return;
         }
+      }
 
-        if (e.code === "Enter") {
+      if (e.ctrlKey || e.metaKey) {
+        // 残りのCtrlキー、または互換性のあるマッピングの処理
+        if (match(e, "addBlock")) {
           if (!isModalOpen && !isSummaryEditing) {
             if (elements.entryDetailView.style.display === "flex") {
               e.preventDefault();
               triggerAddBlock();
             }
           }
-        } else if (e.code === "KeyC") {
-          // テキスト選択がある場合は、標準の「コピー」挙動を優先する
+        } else if (match(e, "newEntry")) {
           const hasSelection = window.getSelection().toString().length > 0;
           if (!hasSelection && !inputActive && !isModalOpen && !isSummaryEditing) {
             e.preventDefault();
             openNewEntryModal();
           }
-        } else if (e.code === "KeyO") { // Ctrl + O フォルダ選択
+        } else if (match(e, "openFolder")) {
           e.preventDefault();
           elements.openFolderBtn.click();
-        } else if (e.code === "KeyE") { // Ctrl + E エントリーの編集
+        } else if (match(e, "editEntry")) {
           if (!isModalOpen && !isSummaryEditing) {
             e.preventDefault();
             openEditEntryModal();
           }
-        } else if (e.code === "KeyI") { // Ctrl + I 概要編集
+        } else if (match(e, "editSummary")) {
           if (!isModalOpen && !isSummaryEditing && elements.summaryEditBtn.style.display !== "none") {
             e.preventDefault();
             elements.summaryEditBtn.click();
             setTimeout(() => elements.summaryTextarea.focus(), 50);
           }
-        } else if (e.code === "KeyH") { // Ctrl + H 一番最初の画面に戻る
-          if (!isModalOpen && !isSummaryEditing) {
-            e.preventDefault();
-            window.EntryMemo.App.showAllEntriesListView();
-          }
-        } else if (e.code === "KeyJ") { // Ctrl + J カテゴリーの移動、またはエントリー一覧ビューへ
+        } else if (match(e, "navigateCategoryNextCtrl")) {
           if (!isModalOpen && !isSummaryEditing) {
             e.preventDefault();
             if (isCategoryViewActive) {
@@ -1151,7 +1243,7 @@ window.EntryMemo.UI = (function () {
               }
             }
           }
-        } else if (e.code === "KeyK") { // Ctrl + K カテゴリーの移動、またはエントリー一覧ビューへ
+        } else if (match(e, "navigateCategoryPrevCtrl")) {
           if (!isModalOpen && !isSummaryEditing) {
             e.preventDefault();
             if (isCategoryViewActive) {
@@ -1165,37 +1257,37 @@ window.EntryMemo.UI = (function () {
             }
           }
         }
-      } else if (e.altKey) { // Alt を伴うショートカット
-        if (e.code === "ArrowDown" || e.key === "ArrowDown" || e.key === "Down") {
+      } else if (e.altKey) {
+        if (match(e, "navigateEntryNext")) {
           e.preventDefault();
           window.EntryMemo.App.handleNavigateEntry("next");
-        } else if (e.code === "ArrowUp" || e.key === "ArrowUp" || e.key === "Up") {
+        } else if (match(e, "navigateEntryPrev")) {
           e.preventDefault();
           window.EntryMemo.App.handleNavigateEntry("prev");
-        } else if (e.code === "ArrowLeft" || e.key === "ArrowLeft" || e.key === "Left") {
+        } else if (match(e, "toggleViewBoard")) {
           e.preventDefault();
           window.EntryMemo.App.handleToggleView("board");
-        } else if (e.code === "ArrowRight" || e.key === "ArrowRight" || e.key === "Right") {
+        } else if (match(e, "toggleViewThread")) {
           e.preventDefault();
           window.EntryMemo.App.handleToggleView("thread");
         }
-      } else { // 修飾キーなし (通常のキー)
+      } else { // 修飾キーなし (または通常のキー)
         if (!inputActive && !isModalOpen && !isSummaryEditing) {
           if (isCategoryViewActive) {
             // --- カテゴリーのエントリー一覧画面でのキー操作 ---
             const cards = elements.categoryEntriesList.querySelectorAll(".inline-entry-item");
-            if (e.code === "KeyJ") {
+            if (match(e, "categoryNavigateNext")) {
               e.preventDefault();
               navigateEntryCardFocus("next");
-            } else if (e.code === "KeyK") {
+            } else if (match(e, "categoryNavigatePrev")) {
               e.preventDefault();
               navigateEntryCardFocus("prev");
-            } else if (e.code === "Enter") {
+            } else if (match(e, "categoryOpenEntry")) {
               if (focusedEntryIndex >= 0 && focusedEntryIndex < cards.length) {
                 e.preventDefault();
                 cards[focusedEntryIndex].click();
               }
-            } else if ((e.code === "KeyD" && e.shiftKey) || e.code === "Delete") {
+            } else if (match(e, "categoryDeleteEntry")) {
               if (focusedEntryIndex >= 0 && focusedEntryIndex < cards.length) {
                 e.preventDefault();
                 const card = cards[focusedEntryIndex];
@@ -1210,20 +1302,20 @@ window.EntryMemo.UI = (function () {
             // --- エントリー詳細ビューでのキー操作 ---
             const cards = elements.blocksList.querySelectorAll(".block-card");
 
-            if (e.code === "KeyJ") {
+            if (match(e, "cardNavigateNext")) {
               e.preventDefault();
               navigateCardFocus("next");
-            } else if (e.code === "KeyK") {
+            } else if (match(e, "cardNavigatePrev")) {
               e.preventDefault();
               navigateCardFocus("prev");
-            } else if (e.code === "Space") {
+            } else if (match(e, "cardToggleExpand")) {
               if (focusedBlockIndex >= 1 && focusedBlockIndex <= cards.length) {
                 e.preventDefault();
                 const targetCard = cards[focusedBlockIndex - 1];
                 const openBtn = targetCard.querySelector(".block-footer button:first-child");
                 if (openBtn) openBtn.click();
               }
-            } else if (e.code === "Enter" || e.code === "KeyE") {
+            } else if (match(e, "cardEdit")) {
               if (focusedBlockIndex === 0) {
                 e.preventDefault();
                 if (elements.summaryEditBtn && elements.summaryEditBtn.style.display !== "none") {
@@ -1236,7 +1328,7 @@ window.EntryMemo.UI = (function () {
                 const editBtn = Array.from(targetCard.querySelectorAll(".block-footer button")).find(b => b.textContent === "編集");
                 if (editBtn) editBtn.click();
               }
-            } else if (e.code === "KeyM") {
+            } else if (match(e, "cardMoveOrMerge")) {
               const checkedBoxes = Array.from(elements.blocksList.querySelectorAll(".block-select-checkbox:checked"));
               if (checkedBoxes.length > 0) {
                 e.preventDefault();
@@ -1247,10 +1339,10 @@ window.EntryMemo.UI = (function () {
                 const moveBtn = Array.from(targetCard.querySelectorAll(".block-footer button")).find(b => b.textContent === "移動");
                 if (moveBtn) moveBtn.click();
               }
-            } else if (e.code === "KeyA") {
+            } else if (match(e, "cardAddBlock")) {
               e.preventDefault();
               triggerAddBlock();
-            } else if (e.code === "KeyD") {
+            } else if (match(e, "cardDelete")) {
               if (performBatchDelete()) {
                 e.preventDefault();
               } else if (focusedBlockIndex >= 1 && focusedBlockIndex <= cards.length) {
@@ -1259,7 +1351,7 @@ window.EntryMemo.UI = (function () {
                 const deleteBtn = Array.from(targetCard.querySelectorAll(".block-footer button")).find(b => b.textContent === "削除");
                 if (deleteBtn) deleteBtn.click();
               }
-            } else if (e.code === "KeyX") {
+            } else if (match(e, "cardSelectMerge")) {
               if (focusedBlockIndex >= 1 && focusedBlockIndex <= cards.length) {
                 e.preventDefault();
                 const targetCard = cards[focusedBlockIndex - 1];
@@ -1269,7 +1361,7 @@ window.EntryMemo.UI = (function () {
                   updateMergeActionBar();
                 }
               }
-            } else if ((e.code === "KeyD" && e.shiftKey) || e.code === "Delete") {
+            } else if (match(e, "deleteEntry")) {
               e.preventDefault();
               const currentEntry = window.EntryMemo.App.getCurrentEntry();
               if (currentEntry) {

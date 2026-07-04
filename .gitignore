@@ -2,4 +2,6 @@ util/*
 !util/.gitkeep
 data/*
 !data/.gitkeep
+app/src/keymaps.js
+
 

@@ -1,0 +1,62 @@
+/**
+ * mememox キーボードショートカット カスタマイズ用サンプルファイル
+ * 
+ * このファイルをコピーして「keymaps.js」という名前で同ディレクトリに保存することで、
+ * キーボードショートカットを自由にカスタマイズできます。
+ * ※「keymaps.js」は .gitignore に登録されており、Git 管理外となります。
+ */
+(function() {
+  window.EntryMemo = window.EntryMemo || {};
+  
+  window.EntryMemo.Keymaps = {
+    // 【カスタマイズ例】
+    // 新規エントリー作成 (デフォルト: Ctrl+C) ──> Ctrl+N に変更したい場合
+    // newEntry: { code: "KeyN", ctrl: true },
+    
+    // 【全キー定義一覧 (デフォルト値)】
+    //
+    // help: { code: "Slash", shift: true },
+    // toggleFavorite: { key: ["s", "S"] },
+    //
+    // showAllEntries: { code: "KeyH", ctrl: true },
+    // toggleSwipe: { code: "KeyL", ctrl: true },
+    // selectAllBlocks: { code: "KeyA", ctrl: true },
+    // batchDelete: { code: "KeyD", ctrl: true },
+    // togglePreview: { code: "KeyP", ctrl: true },
+    // newEntry: { code: "KeyC", ctrl: true },
+    // openFolder: { code: "KeyO", ctrl: true },
+    // editEntry: { code: "KeyE", ctrl: true },
+    // editSummary: { code: "KeyI", ctrl: true },
+    // navigateCategoryNextCtrl: { code: "KeyJ", ctrl: true },
+    // navigateCategoryPrevCtrl: { code: "KeyK", ctrl: true },
+    //
+    // navigateEntryNext: { code: "ArrowDown", alt: true },
+    // navigateEntryPrev: { code: "ArrowUp", alt: true },
+    // toggleViewBoard: { code: "ArrowLeft", alt: true },
+    // toggleViewThread: { code: "ArrowRight", alt: true },
+    //
+    // categoryNavigateNext: { code: "KeyJ" },
+    // categoryNavigatePrev: { code: "KeyK" },
+    // categoryOpenEntry: { code: "Enter" },
+    // categoryDeleteEntry: [
+    //   { code: "KeyD", shift: true },
+    //   { code: "Delete" }
+    // ],
+    //
+    // cardNavigateNext: { code: "KeyJ" },
+    // cardNavigatePrev: { code: "KeyK" },
+    // cardToggleExpand: { code: "Space" },
+    // cardEdit: [
+    //   { code: "Enter" },
+    //   { code: "KeyE" }
+    // ],
+    // cardMoveOrMerge: { code: "KeyM" },
+    // cardDelete: { code: "KeyD" },
+    // cardSelectMerge: { code: "KeyX" },
+    // cardAddBlock: { code: "KeyA" },
+    // deleteEntry: [
+    //   { code: "KeyD", shift: true },
+    //   { code: "Delete" }
+    // ],
+  };
+})();
