@@ -179,11 +179,13 @@ window.EntryMemo.UI = (function () {
     script.onload = () => {
       if (window.EntryMemo && window.EntryMemo.Keymaps) {
         activeKeymaps = Object.assign({}, DefaultKeymaps, window.EntryMemo.Keymaps);
+        console.log("Custom keymaps loaded successfully from src/keymaps.js");
       }
       updateHelpUI();
     };
     script.onerror = () => {
       // 読み込めない場合はデフォルトのまま
+      console.log("Optional custom keymaps (src/keymaps.js) not found. Using default keymaps.");
       updateHelpUI();
     };
     document.head.appendChild(script);

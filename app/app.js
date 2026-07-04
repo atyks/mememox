@@ -83,9 +83,12 @@ window.EntryMemo.App = (function () {
           if (configData && configData.apiUrl) {
             apiUrl = configData.apiUrl;
           }
+        } else {
+          console.log("Optional config.json not found (HTTP " + configRes.status + "). Using default api.php endpoint.");
         }
       } catch (configErr) {
         // config.json が無い、または取得・解析エラーの場合はデフォルト (api.php) をそのまま使用
+        console.log("Optional config.json not found or parsing failed. Using default api.php endpoint.");
       }
  
       try {
