@@ -3,5 +3,7 @@ util/*
 data/*
 !data/.gitkeep
 app/src/keymaps.js
+app/config.json
+
 
 
