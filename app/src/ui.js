@@ -301,7 +301,6 @@ window.EntryMemo.UI = (function () {
       copy: "Copy",
       loadingText: "Saving..."
     }
-    }
   };
 
   // デフォルトのキーマップ定義
