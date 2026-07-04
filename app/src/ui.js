@@ -405,7 +405,7 @@ window.EntryMemo.UI = (function () {
     cardMoveOrMerge: { code: "KeyM" },
     cardDelete: { code: "KeyD" },
     cardSelectMerge: { code: "KeyX" },
-    cardAddBlock: { code: "KeyA" },
+    cardAddBlock: { code: "Enter", ctrl: true },
     deleteEntry: [
       { code: "KeyD", shift: true },
       { code: "Delete" }
