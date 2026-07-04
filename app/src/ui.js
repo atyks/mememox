@@ -179,7 +179,21 @@ window.EntryMemo.UI = (function () {
       noBlocks: "ブロックはありません。",
       mergeCountText: "${count} 件のブロックを選択中",
       blocks: "📝 ブロック",
-      sortBlocksTitle: "ブロックの並び順（昇順/降順）"
+      sortBlocksTitle: "ブロックの並び順（昇順/降順）",
+      
+      // 追加のトースト・ダイアログキー (ja)
+      favoriteTooltip: "お気に入り（Pickup）に追加/解除 (S)",
+      selectTargetCategory: "作成先のカテゴリーを選択してください。",
+      warningAddBlockUnsupported: "このエントリーにはブロックを追加できません。",
+      selectTargetEntry: "移動先のエントリーを選択してください。",
+      markdownCopied: "Markdownをクリップボードにコピーしました。",
+      copyFailed: "コピーに失敗しました。手動でコピーしてください。",
+      dataReloaded: "最新データをロードしました",
+      reloadFailed: "更新に失敗しました：",
+      noBlocksSelectedForMerge: "マージ対象のブロックが選択されていません。",
+      confirmDeleteSelectedBlocks: "選択された ${count} 個のブロックを削除しますか？\n削除したブロックは元に戻せません。",
+      confirmMergeSelectedBlocks: "選択された ${count} 件のブロックを1つにマージしますか？\nマージ後は元の各ブロックの見出しレベルが1段下がり、現在のエントリー内で1つのブロックに統合されます。",
+      confirmDeleteBlockId: "このブロック [${id}] を削除しますか？\n削除したブロックは元に戻せません。"
     },
     en: {
       name: "English",
@@ -325,7 +339,22 @@ window.EntryMemo.UI = (function () {
       noBlocks: "No blocks available.",
       mergeCountText: "${count} block(s) selected",
       blocks: "📝 Blocks",
-      sortBlocksTitle: "Block sort order (Ascending/Descending)"
+      sortBlocksTitle: "Block sort order (Ascending/Descending)",
+      
+      // 追加のトースト・ダイアログキー (en)
+      favoriteTooltip: "Add/Remove from favorites (S)",
+      selectTargetCategory: "Please select a destination category.",
+      warningAddBlockUnsupported: "Cannot add blocks to this entry.",
+      selectTargetEntry: "Please select a destination entry.",
+      markdownCopied: "Markdown copied to clipboard.",
+      copyFailed: "Copy failed. Please copy manually.",
+      dataReloaded: "Latest data loaded.",
+      reloadFailed: "Update failed: ",
+      noBlocksSelectedForMerge: "No blocks selected for merge.",
+      confirmDeleteSelectedBlocks: "Are you sure you want to delete the ${count} selected block(s)?\nThis action cannot be undone.",
+      confirmMergeSelectedBlocks: "Are you sure you want to merge the ${count} selected block(s) into one?\nAfter merging, the heading levels of the original blocks will be lowered by one step and integrated into a single block within the current entry.",
+      confirmDeleteBlockId: "Are you sure you want to delete this block [${id}]?\nThis action cannot be undone."
+    }
     }
   };
 
@@ -1048,14 +1077,14 @@ window.EntryMemo.UI = (function () {
       } else {
         category = elements.newEntryCategorySelect.value;
         if (!category) {
-          showToast("作成先のカテゴリーを選択してください。", "warning");
+          showToast(t("selectTargetCategory", "作成先のカテゴリーを選択してください。"), "warning");
           return;
         }
       }
 
       elements.newEntryCreateBtn.disabled = true;
       elements.newEntryCancelBtn.disabled = true;
-      showLoading("エントリーを作成中...");
+      showLoading(t("entryCreateLoading", "エントリーを作成中..."));
       try {
         const success = await window.EntryMemo.App.handleCreateEntry(category, title);
         if (success) {
@@ -1063,7 +1092,7 @@ window.EntryMemo.UI = (function () {
         }
       } catch (e) {
         console.error("Error during handleCreateEntry in UI:", e);
-        showToast(`エントリー作成処理でエラーが発生しました: ${e.message}`, "error");
+        showToast(`${t("entryCreateFailed", "エントリーの作成に失敗しました：")}${e.message}`, "error");
       } finally {
         hideLoading();
         elements.newEntryCreateBtn.disabled = false;
@@ -1104,7 +1133,7 @@ window.EntryMemo.UI = (function () {
       
       elements.summarySaveBtn.disabled = true;
       elements.summaryCancelBtn.disabled = true;
-      showLoading("概要を保存中...");
+      showLoading(t("savingSummary", "概要を保存中..."));
       try {
         const success = await window.EntryMemo.App.handleSaveSummary(newTitle, newValue);
         if (success) {
@@ -1133,7 +1162,7 @@ window.EntryMemo.UI = (function () {
     const triggerAddBlock = () => {
       const currentEntry = window.EntryMemo.App.getCurrentEntry();
       if (!currentEntry || currentEntry.hasError) {
-        showToast("このエントリーにはブロックを追加できません。", "warning");
+        showToast(t("warningAddBlockUnsupported", "このエントリーにはブロックを追加できません。"), "warning");
         return;
       }
       openBlockModal(null);
@@ -1193,7 +1222,7 @@ window.EntryMemo.UI = (function () {
 
       elements.editEntrySaveBtn.disabled = true;
       elements.editEntryCancelBtn.disabled = true;
-      showLoading("エントリーを保存中...");
+      showLoading(t("savingEntry", "エントリーを保存中..."));
       try {
         const success = await window.EntryMemo.App.handleEditEntry(
           currentEntry.categoryName, 
@@ -1206,7 +1235,7 @@ window.EntryMemo.UI = (function () {
         }
       } catch (e) {
         console.error("Error during handleEditEntry in UI:", e);
-        showToast(`エントリー保存処理でエラーが発生しました: ${e.message}`, "error");
+        showToast(`${t("entryUpdateFailed", "エントリーの保存に失敗しました：")}${e.message}`, "error");
       } finally {
         hideLoading();
         elements.editEntrySaveBtn.disabled = false;
@@ -1280,7 +1309,7 @@ window.EntryMemo.UI = (function () {
             return;
           }
           
-          showLoading("ブロックを移動中...");
+          showLoading(t("movingBlock", "ブロックを移動中..."));
           await window.EntryMemo.App.handleMoveBlockToNewEntry(blockId, category, entryName);
           closeModal();
           elements.moveNewEntryName.value = "";
@@ -1288,10 +1317,10 @@ window.EntryMemo.UI = (function () {
           const category = elements.moveTargetCategory.value;
           const fileName = elements.moveTargetEntry.value;
           if (!fileName) {
-            showToast("移動先のエントリーを選択してください。", "warning");
+            showToast(t("selectTargetEntry", "移動先のエントリーを選択してください。"), "warning");
             return;
           }
-          showLoading("ブロックを移動中...");
+          showLoading(t("movingBlock", "ブロックを移動中..."));
           await window.EntryMemo.App.handleMoveBlock(blockId, category, fileName);
           closeModal();
         }
@@ -1337,18 +1366,18 @@ window.EntryMemo.UI = (function () {
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(text)
             .then(() => {
-              showToast("Markdownをクリップボードにコピーしました。", "success");
+              showToast(t("markdownCopied", "Markdownをクリップボードにコピーしました。"), "success");
             })
             .catch((err) => {
-              showToast(`コピーに失敗しました: ${err.message}`, "error");
+              showToast(`${t("copyFailedPrefix", "コピーに失敗しました：")}${err.message}`, "error");
             });
         } else {
           elements.markdownPreviewTextarea.select();
           try {
             document.execCommand("copy");
-            showToast("Markdownをクリップボードにコピーしました。", "success");
+            showToast(t("markdownCopied", "Markdownをクリップボードにコピーしました。"), "success");
           } catch (err) {
-            showToast("コピーに失敗しました。手動でコピーしてください。", "error");
+            showToast(t("copyFailed", "コピーに失敗しました。手動でコピーしてください。"), "error");
           }
         }
       });
@@ -1367,12 +1396,12 @@ window.EntryMemo.UI = (function () {
     if (elements.headerRefreshBtn) {
       elements.headerRefreshBtn.addEventListener("click", async () => {
         elements.headerRefreshBtn.classList.add("spinning-btn");
-        showLoading("最新のデータを読み込み中...");
+        showLoading(t("loadingLatestData", "最新のデータを読み込み中..."));
         try {
           await window.EntryMemo.App.handlePullToRefresh();
-          showToast("最新データをロードしました", "success");
+          showToast(t("dataReloaded", "最新データをロードしました"), "success");
         } catch (err) {
-          showToast("更新に失敗しました: " + err.message, "error");
+          showToast(`${t("reloadFailed", "更新に失敗しました：")}${err.message}`, "error");
         } finally {
           hideLoading();
           setTimeout(() => {
@@ -1467,9 +1496,9 @@ window.EntryMemo.UI = (function () {
               
               try {
                 await window.EntryMemo.App.handlePullToRefresh();
-                showToast("最新データをロードしました", "success");
+                showToast(t("dataReloaded", "最新データをロードしました"), "success");
               } catch (err) {
-                showToast("リロードに失敗しました: " + err.message, "error");
+                showToast(`${t("reloadFailed", "更新に失敗しました：")}${err.message}`, "error");
               } finally {
                 ptrIndicator.classList.remove("refreshing");
                 ptrIndicator.style.transform = "translateY(-100%)";
@@ -1499,7 +1528,7 @@ window.EntryMemo.UI = (function () {
       const performBatchDelete = () => {
         const checkedBoxes = Array.from(elements.blocksList.querySelectorAll(".block-select-checkbox:checked"));
         if (checkedBoxes.length > 0) {
-          const confirmDelete = confirm(`選択された ${checkedBoxes.length} 個のブロックを削除しますか？\n削除したブロックは元に戻せません。`);
+          const confirmDelete = confirm(t("confirmDeleteSelectedBlocks", "選択された ${count} 個のブロックを削除しますか？\n削除したブロックは元に戻せません。").replace("${count}", checkedBoxes.length));
           if (confirmDelete) {
             const blockIds = checkedBoxes.map(cb => cb.dataset.recordId);
             const currentEntry = window.EntryMemo.App.getCurrentEntry();
@@ -1966,7 +1995,7 @@ window.EntryMemo.UI = (function () {
         return;
       }
 
-      const confirmMerge = confirm(`選択された ${count} 件のブロックを1つにマージしますか？\nマージ後は元の各ブロックの見出しレベルが1段下がり、現在のエントリー内で1つのブロックに統合されます。`);
+      const confirmMerge = confirm(t("confirmMergeSelectedBlocks", "選択された ${count} 件のブロックを1つにマージしますか？\nマージ後は元の各ブロックの見出しレベルが1段下がり、現在のエントリー内で1つのブロックに統合されます。").replace("${count}", count));
       if (confirmMerge) {
         const blockIds = Array.from(checkedBoxes).map(cb => cb.dataset.recordId);
         
@@ -2135,12 +2164,12 @@ window.EntryMemo.UI = (function () {
    */
   function openBlockModal(block = null) {
     if (block) {
-      elements.blockModalTitle.textContent = "ブロックを編集";
+      elements.blockModalTitle.textContent = t("editBlockTitle", "ブロックを編集");
       elements.blockModal.dataset.editingBlockId = block.id;
       elements.blockInputTitle.value = block.title;
       elements.blockInputBody.value = block.body;
     } else {
-      elements.blockModalTitle.textContent = "ブロックを追加";
+      elements.blockModalTitle.textContent = t("addBlockTitle", "ブロックを追加");
       delete elements.blockModal.dataset.editingBlockId;
       elements.blockInputTitle.value = "";
       elements.blockInputBody.value = "";
@@ -2457,7 +2486,7 @@ window.EntryMemo.UI = (function () {
         deleteBtn.textContent = "削除";
         deleteBtn.style.color = "var(--color-error)";
         deleteBtn.addEventListener("click", () => {
-          const confirmDelete = confirm(`このブロック [${rec.id}] を削除しますか？\n削除したブロックは元に戻せません。`);
+          const confirmDelete = confirm(t("confirmDeleteBlockId", "このブロック [${id}] を削除しますか？\n削除したブロックは元に戻せません。").replace("${id}", rec.id));
           if (confirmDelete) {
             const targetIdx = displayBlocks.findIndex(b => b.id === rec.id);
             if (targetIdx + 1 < displayBlocks.length) {
@@ -2691,7 +2720,7 @@ window.EntryMemo.UI = (function () {
       elements.favoriteToggleBtn.title = "ゴミ箱に入っているためお気に入りに追加できません";
     } else {
       elements.favoriteToggleBtn.disabled = false;
-      elements.favoriteToggleBtn.title = "お気に入り（Pickup）に追加/解除 (S)";
+      elements.favoriteToggleBtn.title = t("favoriteTooltip", "お気に入り（Pickup）に追加/解除 (S)");
       if (isFav) {
         elements.favoriteToggleBtn.textContent = "★";
         elements.favoriteToggleBtn.classList.add("active");
