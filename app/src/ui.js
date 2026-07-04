@@ -203,8 +203,6 @@ window.EntryMemo.UI = (function () {
       viewModeFlat: "Flat (Newest First) ↕",
       noEntries: "No entries registered."
     }
-    }
-    }
   };
 
   // デフォルトのキーマップ定義
