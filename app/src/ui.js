@@ -1169,6 +1169,46 @@ window.EntryMemo.UI = (function () {
     });
 
     // ブロック追加ボタン
+    let isAddBlockLongPressed = false;
+    let addBlockLongPressTimer = null;
+
+    const handleLongPressAction = async () => {
+      showLoading("inboxを開いています...");
+      try {
+        await window.EntryMemo.App.handleSelectEntry("inbox", "inbox.md");
+        openBlockModal(null);
+      } catch (err) {
+        console.error(err);
+        showToast("inboxの切り替えに失敗しました", "error");
+      } finally {
+        hideLoading();
+      }
+    };
+
+    const startAddBlockLongPress = () => {
+      if (!window.EntryMemo.App.isFavorite("inbox", "inbox.md")) return;
+      isAddBlockLongPressed = false;
+      addBlockLongPressTimer = setTimeout(() => {
+        isAddBlockLongPressed = true;
+        handleLongPressAction();
+      }, 2000);
+    };
+
+    const cancelAddBlockLongPress = () => {
+      if (addBlockLongPressTimer) {
+        clearTimeout(addBlockLongPressTimer);
+        addBlockLongPressTimer = null;
+      }
+    };
+
+    elements.addBlockBtnTop.addEventListener("mousedown", startAddBlockLongPress);
+    elements.addBlockBtnTop.addEventListener("touchstart", startAddBlockLongPress, { passive: true });
+    elements.addBlockBtnTop.addEventListener("mouseup", cancelAddBlockLongPress);
+    elements.addBlockBtnTop.addEventListener("mouseleave", cancelAddBlockLongPress);
+    elements.addBlockBtnTop.addEventListener("touchend", cancelAddBlockLongPress);
+    elements.addBlockBtnTop.addEventListener("touchcancel", cancelAddBlockLongPress);
+    elements.addBlockBtnTop.addEventListener("touchmove", cancelAddBlockLongPress);
+
     const triggerAddBlock = () => {
       const currentEntry = window.EntryMemo.App.getCurrentEntry();
       if (!currentEntry || currentEntry.hasError) {
@@ -1177,9 +1217,53 @@ window.EntryMemo.UI = (function () {
       }
       openBlockModal(null);
     };
-    elements.addBlockBtnTop.addEventListener("click", triggerAddBlock);
+
+    elements.addBlockBtnTop.addEventListener("click", (e) => {
+      if (isAddBlockLongPressed) {
+        e.preventDefault();
+        e.stopPropagation();
+        isAddBlockLongPressed = false;
+        return;
+      }
+      triggerAddBlock();
+    });
+
+    // エントリー追加ボタン
+    let isAddEntryLongPressed = false;
+    let addEntryLongPressTimer = null;
+
+    const startAddEntryLongPress = () => {
+      if (!window.EntryMemo.App.isFavorite("inbox", "inbox.md")) return;
+      isAddEntryLongPressed = false;
+      addEntryLongPressTimer = setTimeout(() => {
+        isAddEntryLongPressed = true;
+        handleLongPressAction();
+      }, 2000);
+    };
+
+    const cancelAddEntryLongPress = () => {
+      if (addEntryLongPressTimer) {
+        clearTimeout(addEntryLongPressTimer);
+        addEntryLongPressTimer = null;
+      }
+    };
+
     if (elements.addEntryBtnFab) {
-      elements.addEntryBtnFab.addEventListener("click", () => {
+      elements.addEntryBtnFab.addEventListener("mousedown", startAddEntryLongPress);
+      elements.addEntryBtnFab.addEventListener("touchstart", startAddEntryLongPress, { passive: true });
+      elements.addEntryBtnFab.addEventListener("mouseup", cancelAddEntryLongPress);
+      elements.addEntryBtnFab.addEventListener("mouseleave", cancelAddEntryLongPress);
+      elements.addEntryBtnFab.addEventListener("touchend", cancelAddEntryLongPress);
+      elements.addEntryBtnFab.addEventListener("touchcancel", cancelAddEntryLongPress);
+      elements.addEntryBtnFab.addEventListener("touchmove", cancelAddEntryLongPress);
+
+      elements.addEntryBtnFab.addEventListener("click", (e) => {
+        if (isAddEntryLongPressed) {
+          e.preventDefault();
+          e.stopPropagation();
+          isAddEntryLongPressed = false;
+          return;
+        }
         openNewEntryModal();
       });
     }
