@@ -2600,49 +2600,107 @@ window.EntryMemo.UI = (function () {
 
     if (currentEntryListViewMode === "flat") {
       // --- カテゴリーの区別をなくして新着順（一列）にフラット表示 ---
-      const listDiv = document.createElement("div");
-      listDiv.className = "inline-entry-list flat-list";
-      
-      entries.forEach(t => {
-        const item = document.createElement("a");
-        item.className = "inline-entry-item";
-        item.href = "#";
-        const entryCategory = t.categoryName || categoryName;
-        item.dataset.categoryName = entryCategory;
-        item.dataset.fileName = t.fileName;
+      // ただし、ゴミ箱とゴミ箱に含まれるエントリーは別扱いにして一番下にカテゴリとして表示する
+      const normalEntries = [];
+      const trashEntries = [];
+      let trashCategoryName = "ゴミ箱";
 
-        // スター
-        const star = document.createElement("span");
-        star.className = "compact-entry-star";
+      entries.forEach(t => {
+        const entryCategory = t.categoryName || categoryName;
         const isTrash = entryCategory === "ゴミ箱" || entryCategory === "trash";
         if (isTrash) {
-          star.textContent = "🗑️";
-          star.style.cursor = "default";
+          trashEntries.push(t);
+          trashCategoryName = entryCategory;
         } else {
+          normalEntries.push(t);
+        }
+      });
+
+      if (normalEntries.length > 0) {
+        const listDiv = document.createElement("div");
+        listDiv.className = "inline-entry-list flat-list";
+        
+        normalEntries.forEach(t => {
+          const item = document.createElement("a");
+          item.className = "inline-entry-item";
+          item.href = "#";
+          const entryCategory = t.categoryName || categoryName;
+          item.dataset.categoryName = entryCategory;
+          item.dataset.fileName = t.fileName;
+
+          // スター
+          const star = document.createElement("span");
+          star.className = "compact-entry-star";
           star.textContent = t.isFavorite ? "★" : "☆";
           star.addEventListener("click", (e) => {
             e.stopPropagation();
             e.preventDefault();
             window.EntryMemo.App.handleToggleFavorite(entryCategory, t.fileName);
           });
-        }
-        star.style.marginRight = "6px";
-        item.appendChild(star);
+          star.style.marginRight = "6px";
+          item.appendChild(star);
 
-        // タイトル
-        const title = document.createElement("span");
-        title.className = "inline-entry-title";
-        title.textContent = t.title;
-        item.appendChild(title);
+          // タイトル
+          const title = document.createElement("span");
+          title.className = "inline-entry-title";
+          title.textContent = t.title;
+          item.appendChild(title);
 
-        item.addEventListener("click", (e) => {
-          e.preventDefault();
-          window.EntryMemo.App.handleSelectEntry(entryCategory, t.fileName);
+          item.addEventListener("click", (e) => {
+            e.preventDefault();
+            window.EntryMemo.App.handleSelectEntry(entryCategory, t.fileName);
+          });
+
+          listDiv.appendChild(item);
+        });
+        elements.categoryEntriesList.appendChild(listDiv);
+      }
+
+      if (trashEntries.length > 0) {
+        const groupDiv = document.createElement("div");
+        groupDiv.className = "inline-entry-group";
+
+        const titleHeader = document.createElement("h4");
+        titleHeader.className = "inline-entry-group-title";
+        titleHeader.textContent = t(trashCategoryName);
+        groupDiv.appendChild(titleHeader);
+
+        const listDiv = document.createElement("div");
+        listDiv.className = "inline-entry-list";
+
+        trashEntries.forEach(t => {
+          const item = document.createElement("a");
+          item.className = "inline-entry-item";
+          item.href = "#";
+          const entryCategory = t.categoryName || categoryName;
+          item.dataset.categoryName = entryCategory;
+          item.dataset.fileName = t.fileName;
+
+          // スター
+          const star = document.createElement("span");
+          star.className = "compact-entry-star";
+          star.textContent = "🗑️";
+          star.style.cursor = "default";
+          star.style.marginRight = "6px";
+          item.appendChild(star);
+
+          // タイトル
+          const title = document.createElement("span");
+          title.className = "inline-entry-title";
+          title.textContent = t.title;
+          item.appendChild(title);
+
+          item.addEventListener("click", (e) => {
+            e.preventDefault();
+            window.EntryMemo.App.handleSelectEntry(entryCategory, t.fileName);
+          });
+
+          listDiv.appendChild(item);
         });
 
-        listDiv.appendChild(item);
-      });
-      elements.categoryEntriesList.appendChild(listDiv);
+        groupDiv.appendChild(listDiv);
+        elements.categoryEntriesList.appendChild(groupDiv);
+      }
       
     } else {
       // --- カテゴリーごとにグループ化して表示（デフォルト） ---
