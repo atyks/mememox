@@ -1,82 +1,84 @@
-# mememox サーバーサイドAPI開発仕様書 (Specification for API)
+# mememox Server-Side API Specification
 
-本書は、`mememox` フロントエンド静的アプリケーションがサーバー連携モードで動作する際に必要となる、サーバーサイドAPIの実装・開発ガイドラインです。
+English | [日本語 (Japanese)](specification_for_api.ja.md)
 
-プラットフォーム（PHP, Node.js, Go, Python等）やホスティング環境に依存せず、同一のAPIインターフェースと動作基準を満たすための共通仕様を規定しています。
+This document provides system integration and development guidelines for implementing the server-side API endpoints required when the `mememox` frontend runs in Server Mode.
 
----
-
-## 1. 動作の全体像 ＆ キャッシュモデル
-
-`mememox` は通信回数と遅延を極限まで低減させるため、**「起動時一括キャッシュ（インメモリキャッシュ）同期モデル」** を採用しています。
-
-1. **初期ロード**: クライアント起動時、`load_all` アクションを1回だけ呼び出し、サーバー内の全フォルダ構造、ファイルの内容、更新時刻、およびお気に入りリストを一括して取得・キャッシュします。
-2. **高速動作**: リスト一覧表示やファイルの読み込みは、クライアント内のインメモリキャッシュからミリ秒単位で超高速に行われます。
-3. **書き込み・更新**: ファイルの保存・新規作成・移動・削除の際は、対象ファイルについてのみAPIへPOSTリクエストを送信し、API側での保存成功時にフロントのインメモリキャッシュを部分更新します。
+It defines common API schemas, payloads, and behavioral constraints to ensure consistent behavior across various backend platforms (PHP, Node.js, Go, Python, etc.) and hosting environments.
 
 ---
 
-## 2. 共通セキュリティ ＆ バリデーションポリシー
+## 1. Synchronization Model (In-Memory Cache)
 
-APIを実装する際は、外部からの不正アクセスやデータの破損を防ぐため、以下のガード（チェック）を必ず全リクエストに対して実施してください。
+To minimize network latency and connection overhead, `mememox` uses an **"In-Memory Cache Synchronization Model"**:
 
-### ① HTTPメソッドとContent-Typeの制約
-* データ書き込みが発生するアクションは、必ず `POST` メソッドのみを許可してください。
-* `POST` 時の `Content-Type` は `application/json` に制限し、リクエストボディサイズは `1MB` 以下として制限してください。
-
-### ② ディレクトリトラバーサル攻撃（ディレクトリエスケープ）の絶対防御
-カテゴリー名（`category`）およびファイル名（`file`）は、サーバーの物理ディレクトリパスへと結合されるため、以下の文字列が含まれている場合は `400 Bad Request` として即座に拒否する必要があります。
-* ディレクトリセパレータや親参照記号: `/` , `\\` , `..`
-* ヌルバイト文字: `\0` (または `chr(0)`)
-* ドット開始（隠しファイル）: 先頭文字が `.` のカテゴリー名・ファイル名
-
-### ③ 文字数制限
-* カテゴリー名（`category`）: 最大100文字
-* ファイル名（`file`）: 最大255文字
+1. **Initial Load**: Upon startup, the client dispatches a single `load_all` API request to retrieve all directories, files, contents, metadata, and favorited states.
+2. **Speed**: Operations such as listing entries or viewing files are processed locally on the cached database in milliseconds.
+3. **Writes & Updates**: Saves, creations, moves, and deletions transmit a POST request referencing the target file. Once verified by the API, the local client cache is updated accordingly.
 
 ---
 
-## 3. 安全性と整合性ガード
+## 2. Security & Input Validation Policies
 
-### ① アトミック書き込み（破損防止）
-ファイルをディスクに保存する際、直接既存ファイルに上書き書き込みを行うと、処理途中の切断等によってファイルが破損する危険があります。
-**【アルゴリズム】**
-1. データ保存用ディレクトリ内に、ユニークな名前の一時ファイルを書き出す。
-2. 一時ファイルへのデータ書き込みとクローズが100%成功したことを確認する。
-3. プラットフォーム依存のアトミックなファイル置換システムコール（例: POSIX `rename` 等）を用いて、一時ファイルを目的のファイル名に置き換える。失敗した場合は一時ファイルを削除する。
+To protect against malicious activities, the API must perform the following validation checks for all requests:
 
-### ② 楽観的ロックによる競合防止（衝突検出）
-複数端末からの同時編集による変更の上書き消失（Lost Update）を防ぐため、ハッシュ値（revision）による競合検出を行います。
-**【アルゴリズム】**
-1. クライアントが保持している `baseRevision`（読み込み時に渡したファイルの SHA-256 ハッシュ値）をAPIリクエストで受信する。
-2. API側は、現在ディスク上にある既存ファイルのデータから SHA-256 ハッシュ値（`currentRevision`）を計算する。
-3. `baseRevision` と `currentRevision` を比較し、不一致であれば他の端末で先に更新されたと判断し、`409 Conflict` エラーを返却して書き込みを拒否する。
+### ① HTTP Methods & Content-Type
+* Limit writing requests to the `POST` method.
+* Require `Content-Type: application/json` for POST requests, enforcing a maximum payload size of `1MB`.
+
+### ② Directory Traversal Defense
+Because category and file parameters map directly to target directory paths, any payload containing the following sequences must immediately trigger a `400 Bad Request`:
+* Directory separators or parent references: `/`, `\\`, `..`
+* Null byte characters: `\0` (or `chr(0)`)
+* Hidden files: Categories or filenames starting with `.`.
+
+### ③ String Length Constraints
+* Category name (`category`): Maximum 100 characters.
+* Filename (`file`): Maximum 255 characters.
 
 ---
 
-## 4. API アクション仕様 (エンドポイント)
+## 3. Concurrency & Safety Resolution
 
-APIへのリクエストは、URLのクエリパラメータ `action` (例: `?action=load_all`) で分岐します。
+### ① Atomic Writes
+Overwriting files directly poses a risk of data corruption if connections terminate prematurely.
+**【Recommended Algorithm】**
+1. Write target content into a unique temporary file inside the data directory.
+2. Ensure the file has closed successfully.
+3. Swap the temporary file with the target file using atomic system calls (e.g., POSIX `rename`). Remove the temporary file if rename operations fail.
+
+### ② Concurrency Guard (Optimistic Locking)
+To prevent lost updates caused by simultaneous modifications from multiple clients, use SHA-256 hash revisions.
+**【Recommended Algorithm】**
+1. The client submits its cached SHA-256 hash revision as `baseRevision`.
+2. The server computes the current SHA-256 hash revision (`currentRevision`) of the target file on disk.
+3. Reject saves and return `409 Conflict` if `baseRevision` does not match `currentRevision`.
+
+---
+
+## 4. API Endpoints Specification
+
+API requests are routed based on the `action` query parameter (e.g., `?action=load_all`).
 
 ---
 
 ### ① `load_all` (GET / POST)
-サーバーのデータ保存ディレクトリ内を再帰走査し、全エントリーの内容とお気に入りリストを一括返却します。
+Recursively scans the storage folder, retrieving all entries, metadata, and favorites.
 
-* **処理内容**:
-  1. 保存ディレクトリ内のサブフォルダ（カテゴリー）をスキャンする。ドットで始まる隠しフォルダは除外する。
-  2. 各フォルダ内の Markdown ファイル（`.md`）の内容、ファイル名、およびファイルハッシュ値（`sha256:` を接頭辞とした SHA-256 ハッシュ文字列）、OS上の最終更新時刻（`mtime` / エポックタイム）を取得する。
-  3. 保存ディレクトリ直下の `favorites.json` から、お気に入りリスト配列を読み込む。
-  4. カテゴリー名をソートする（「ゴミ箱」または「trash」は必ず配列の最後に並び替える）。
-* **応答レスポンス (JSON)**:
+* **Behavior**:
+  1. Scan subfolders (categories) inside the storage root, ignoring hidden folders starting with `.`.
+  2. Read each Markdown file (`.md`), recording contents, name, hash (prefixed with `sha256:`), and modification time (`mtime` / Epoch timestamp).
+  3. Retrieve favorited entries from `favorites.json` in the storage root.
+  4. Sort categories, placing the Trash folder (e.g., "Trash" or "ゴミ箱") at the end of the array.
+* **Response (JSON)**:
   ```json
   {
-    "categories": ["inbox", "thinking", "work", "ゴミ箱"],
+    "categories": ["inbox", "thinking", "work", "Trash"],
     "entries": {
       "inbox/inbox.md": {
         "category": "inbox",
         "fileName": "inbox.md",
-        "content": "# Inbox\n\n## 概要\n...",
+        "content": "# Inbox\n\n## Summary\n...",
         "revision": "sha256:4a8c...",
         "mtime": 1789456210
       }
@@ -88,9 +90,9 @@ APIへのリクエストは、URLのクエリパラメータ `action` (例: `?ac
 ---
 
 ### ② `save_favorites` (POST)
-クライアントから送られたお気に入りリスト配列を、`DATA_DIR/favorites.json` にアトミックに保存します。
+Overwrites and persists the favorites list into `DATA_DIR/favorites.json`.
 
-* **要求リクエスト (JSON)**:
+* **Request Body (JSON)**:
   ```json
   {
     "favorites": [
@@ -99,7 +101,7 @@ APIへのリクエストは、URLのクエリパラメータ `action` (例: `?ac
     ]
   }
   ```
-* **応答レスポンス (JSON)**:
+* **Response (JSON)**:
   ```json
   {
     "ok": true
@@ -109,9 +111,9 @@ APIへのリクエストは、URLのクエリパラメータ `action` (例: `?ac
 ---
 
 ### ③ `write_entry` (POST)
-既存の Markdown ファイルの内容を、競合検出とアトミック書き込みを実行した上で安全に上書きします。
+Overwrites an entry, verifying hash revisions and utilizing atomic write methods.
 
-* **要求リクエスト (JSON)**:
+* **Request Body (JSON)**:
   ```json
   {
     "category": "inbox",
@@ -120,8 +122,8 @@ APIへのリクエストは、URLのクエリパラメータ `action` (例: `?ac
     "baseRevision": "sha256:4a8c..."
   }
   ```
-* **応答レスポンス (JSON)**:
-  * 成功時 (`200 OK`):
+* **Response (JSON)**:
+  * On success (`200 OK`):
     ```json
     {
       "ok": true,
@@ -129,7 +131,7 @@ APIへのリクエストは、URLのクエリパラメータ `action` (例: `?ac
       "mtime": 1789456299
     }
     ```
-  * 競合検出時 (`409 Conflict`):
+  * On conflict (`409 Conflict`):
     ```json
     {
       "ok": false,
@@ -140,9 +142,9 @@ APIへのリクエストは、URLのクエリパラメータ `action` (例: `?ac
 ---
 
 ### ④ `create_entry` (POST)
-指定されたカテゴリーに新規 Markdown ファイルを作成します。既存ファイルがある場合は、ファイル名の末尾に `-2`, `-3` などの連番を付与して衝突を回避します。
+Creates a new Markdown file. Automatically resolves conflicts by adding numerical suffixes (e.g., `-2`, `-3`) to the filename.
 
-* **要求リクエスト (JSON)**:
+* **Request Body (JSON)**:
   ```json
   {
     "category": "inbox",
@@ -150,9 +152,9 @@ APIへのリクエストは、URLのクエリパラメータ `action` (例: `?ac
     "content": "# New Memo ..."
   }
   ```
-* **重複解決ロジック**:
-  * `DATA_DIR/inbox/new-memo.md` がすでに存在する場合 ──> `new-memo-2.md`, `new-memo-3.md` の順に空いているファイル名を探して作成する。
-* **応答レスポンス (JSON)**:
+* **Conflict Resolution**:
+  * If `DATA_DIR/inbox/new-memo.md` already exists, attempt to save as `new-memo-2.md`, then `new-memo-3.md`, until an open slot is found.
+* **Response (JSON)**:
   ```json
   {
     "ok": true,
@@ -165,9 +167,9 @@ APIへのリクエストは、URLのクエリパラメータ `action` (例: `?ac
 ---
 
 ### ⑤ `move_entry` (POST)
-ファイルを別のカテゴリー、あるいは別のファイル名に変更・移動させます。移動先のファイル名重複時は、自動的に連番で解決します。
+Relocates or renames an entry, resolving conflicts with sequence suffixes.
 
-* **要求リクエスト (JSON)**:
+* **Request Body (JSON)**:
   ```json
   {
     "old_category": "inbox",
@@ -176,9 +178,9 @@ APIへのリクエストは、URLのクエリパラメータ `action` (例: `?ac
     "new_file": "final-report.md"
   }
   ```
-* **追加クリーンアップルール**:
-  * 移動後、移動元の親カテゴリーフォルダが空になった場合は、フォルダ自体を物理削除する（ただし、「ゴミ箱」や「trash」フォルダは空でも削除しない）。
-* **応答レスポンス (JSON)**:
+* **Cleanup Behavior**:
+  * After moving, delete the source category directory if it becomes empty (do not delete Trash directories).
+* **Response (JSON)**:
   ```json
   {
     "ok": true,
@@ -191,18 +193,18 @@ APIへのリクエストは、URLのクエリパラメータ `action` (例: `?ac
 ---
 
 ### ⑥ `delete_entry` (POST)
-指定されたファイルを物理的に削除します。
+Deletes the specified note file permanently.
 
-* **要求リクエスト (JSON)**:
+* **Request Body (JSON)**:
   ```json
   {
-    "category": "ゴミ箱",
+    "category": "Trash",
     "file": "deleted-memo.md"
   }
   ```
-* **追加クリーンアップルール**:
-  * 削除後、親カテゴリーフォルダが空になった場合は、フォルダ自体を物理削除する（ただし、「ゴミ箱」や「trash」フォルダは削除しない）。
-* **応答レスポンス (JSON)**:
+* **Cleanup Behavior**:
+  * Delete the parent directory if it becomes empty (do not delete Trash directories).
+* **Response (JSON)**:
   ```json
   {
     "ok": true

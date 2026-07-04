@@ -1,127 +1,129 @@
-# mememox
+# mememox User Manual
 
-`mememox` は、ブラウザ上で個人用Markdownメモを効率的に管理・閲覧・編集するための、キーボードフレンドリーかつタッチ操作にも最適化されたエントリー型メモアプリケーションです。
+[English](how-to-use.md) | [日本語 (Japanese)](how-to-use.ja.md)
 
-時系列でログが流れて結論が分からなくなるチャットツールとは異なり、エントリーの上部に常に「概要（方針や結論）」を固定し、下部に「ブロック（時系列のメモ）」をカード状に蓄積・整理することができます。
+`mememox` is a keyboard-friendly and touch-optimized personal note application designed to manage, browse, and edit your Markdown files directly in the browser.
+
+Unlike typical chat tools where chronological logs bury conclusions, `mememox` keeps a "Summary" pinned at the top of each entry, letting you compile thoughts and logs in card-like "Blocks" below.
 
 > [!NOTE]
-> **キーボードショートカットのカスタマイズについて**
-> 本書に記載されているショートカットキーは**デフォルトの値**です。
-> `app/src/keymaps.js` を作成してキー割り当てをカスタマイズしている場合は、ご自身で設定したキーに読み替えてご使用ください。
-> なお、アプリ内で `?` キーを押して表示されるヘルプ画面（ショートカット一覧）には、ご自身が設定したカスタムキーが**自動的かつリアルタイムに反映**されます。
+> **Keyboard Shortcut Customization**
+> The keyboard shortcuts documented in this manual are the **default configurations**.
+> If you have overridden key assignments using `app/src/keymaps.js`, please read the shortcuts accordingly.
+> The shortcut help panel (opened with the `?` key) inside the app automatically renders and displays your custom keys in real-time.
 
 ---
 
-## 🚀 起動方法
+## 🚀 Getting Started
 
-本アプリはWebサーバーでの公開、またはローカル単体での起動のどちらでも利用可能です。
+The app runs either as a static local frontend or connected to a secure web server.
 
-1. **ローカル起動（デモ / ローカルフォルダ）**
-   * [index.html](index.html) を Chromium系ブラウザ（Microsoft Edge または Google Chrome）で開きます。
-   * 起動時は画面左上が「デモモード」になっています。
-   * 実際のローカルファイルを保存・管理する場合は、画面右上の **[📁 フォルダを開く]** ボタンを押し、`mememox` 用のルートフォルダ（空のフォルダでも可）を選択します。
-2. **サーバー起動（サーバーモード）**
-   * アプリをWebサーバー上に配置して `http`/`https` 経由でアクセスすると、自動的に「サーバーモード」として起動します。
-   * サーバーモードでは、データを一括ロードしてメモリ上に保持するインメモリキャッシュ機能により、劇的に高速な読み書き・お気に入り同期が実行されます。
+1. **Local Use (Demo Mode / Local Directory)**
+   * Open `index.html` directly in your Chromium-based browser (Microsoft Edge, Google Chrome, etc.).
+   * The app boots into **Demo Mode** by default.
+   * To open and manage actual files on your PC, click the folder button (📁) at the top-right and select your notes directory. (Requires File System Access API support).
+2. **Server Integration (Server Mode)**
+   * Deploying the app on a web server and accessing it via `http`/`https` automatically activates **Server Mode**.
+   * Server Mode leverages ultra-fast in-memory cache synchronization to read/write notes and favorites across devices.
 
 ---
 
-## 📁 実ファイル利用時の想定構成
+## 📁 Standard Directory Structure
 
-ローカルフォルダまたはサーバー上で使用する場合、以下のようなフォルダ構造が自動生成（または読み込み）されます。
+When working with actual files on disk, the system reads and generates the following folder structure:
 
 ```text
-ルートフォルダ/
+Root Directory/
 ├─ inbox/
-│  └─ inbox.md             (一時的なメモエントリー)
+│  └─ inbox.md             (Scratchpad / temporary notes)
 ├─ thinking/
 │  ├─ entry-memo-system.md
-│  └─ pkm-and-markdown.md  (思考整理用のエントリー)
+│  └─ pkm-and-markdown.md  (Brainstorming entries)
 ├─ work/
-│  └─ work-memo-environment.md (作業ログ用エントリー)
-├─ ゴミ箱/                  (削除されたエントリーの移動先)
-└─ favorites.json          (サーバーモード時のお気に入り管理データ)
+│  └─ work-memo-environment.md (Worklogs)
+├─ Trash/                  (Category where deleted notes are moved)
+└─ favorites.json          (Favorited items index under Server Mode)
 ```
 
 ---
 
-## ✨ 主な機能
+## ✨ Key Features
 
-### 📌 概要セクション
-* 各エントリーの最上部には、現在の結論、未解決事項、次にやるべきことを記述する「概要」を固定表示します。
-* テキストエリアは入力された文字の量に合わせて**自動的に高さが伸び縮み**します。
+### 📌 Summary Section
+* Pinned at the top of each entry, the Summary records current directions, pending items, or final decisions.
+* Textareas **autosize dynamically** based on text length to eliminate scroll bars inside inputs.
 
-### 📝 ブロックカード一覧
-* 各ブロックは、見出し単位で個別のカードとして並びます。
-* 追加したブロックには自動的に一意のID（例: `[a73bc]`）と追加時のタイムスタンプが付与されます。
-* 本文のテキストエリアも、入力した文字数に応じてリアルタイムに高さが自動調整されます。
+### 📝 Block Cards
+* Each individual note block displays as a discrete card.
+* Creating a block assigns a unique alphanumeric ID (e.g., `[a73bc]`) and a creation timestamp automatically.
+* Textareas auto-expand and collapse in real-time.
 
-### ⭐ お気に入り（Pickup）同期機能
-* エントリーのお気に入り追加状態（★/☆）は、ローカルモード時はブラウザのLocalStorageに、サーバーモード時はサーバー（`favorites.json`）と自動的に同期・保存されます。
+### ⭐ Favorites Syncing
+* Note favorites (★/☆ toggles) automatically sync. They save to the browser's LocalStorage in local mode, and synchronize to the server's `favorites.json` in Server Mode.
 
-### 🔄 高速キャッシュ ＆ リロード機能
-* サーバーモード時は、起動時に全データをキャッシュすることで快適な超高速動作を実現しています。
-* 変更があった場合は、画面ヘッダーの **リロードボタン（🔄）** を押すか、モバイル環境下で画面を下に引っ張る **Pull-to-refresh** 操作によって、最新のデータをサーバーから再取得しキャッシュを同期できます。
+### 🔄 Fast Sync & Reload
+* Server Mode caches all files inside the browser to keep navigation instantaneous.
+* Sync updates by clicking the reload button (🔄) in the header, or pulling the viewport downwards (**Pull-to-refresh**) on mobile screens.
 
-### 🗺️ パンくずリストナビゲーション
-* エントリー詳細のタイトル部は「すべて ＞ カテゴリー名 ＞ タイトル名」の3階層のリンクになっており、クリックすることで該当する一覧ビューへ瞬時に戻ることができます。
+### 🗺️ Breadcrumb Links
+* The details page header renders a 3-tier breadcrumb: `All ＞ [Category Name] ＞ [Entry Title]`. Click a parent tier to jump back to its respective list.
 
-### 🗑️ エントリーの削除とゴミ箱ガード
-* エントリーを削除すると、エントリーは物理削除されずに **`ゴミ箱`** という名前のカテゴリー（`ゴミ箱/` フォルダ）へ安全に移動されます。
-* `ゴミ箱` カテゴリーにあるエントリーは、お気に入りに追加することはできず、お気に入りマークも自動的にゴミ箱（🗑️）アイコンに変わります。
-* ゴミ箱にあるエントリーを再度削除しようとした場合のみ、確認を経て完全に削除されます。
+### 🗑️ Relocating & Guarding Trash
+* Deleting an entry relocates the Markdown file to the **`Trash`** (or `ゴミ箱`) category directory instead of erasing it permanently.
+* Entries under the Trash category cannot be favorited; their stars change to a disabled 🗑️ trash bin icon.
+* Deleting a note while it is inside the Trash category triggers a confirmation prompt to erase the file permanently.
 
-### ✏️ エントリーの編集（カテゴリー移動・リネーム）
-* エントリータイトルを編集すると、Markdownファイル内のH1が書き換わるとともに、ファイル名もタイトルに合わせて自動でリネームされます。
-* 所属するカテゴリーを変更して別のカテゴリーにエントリーを移動させたり、その場で「新しいカテゴリー」を作成してそこへ移動させたりできます。
+### ✏️ Editing Entries (Relocate & Rename)
+* Modifying an entry's title rewrites the file's H1 title and renames the physical `.md` filename on disk.
+* Re-categorize entries by choosing a category from the dropdown or typing a new folder name to relocate them instantly.
 
-### 🤝 ブロックのマージ機能
-* 複数のブロック（チェックボックスで選択）を1つに統合して、別の既存エントリーや新規エントリーに切り出すことができます。
-* マージする際、元の各ブロックの見出しレベルは自動的に1段下がり（デモートされ）、マージ先の書き込みが100%成功した後にのみ、元のエントリーから選択されたブロックが削除される安全設計です。
+### 🤝 Merging Blocks
+* Merge multiple blocks (using checkboxes) to extract them into a new entry or append them to an existing entry.
+* Original block headers automatically demote by one level upon export. The source block remains untouched until the target save is fully verified.
 
-### 📱 モバイルジェスチャー
-* スマホ等のタッチ環境下では、画面を左右にスワイプすることで「エントリー一覧ビュー」と「エントリー詳細ビュー」の間をシームレスに行き来できます。
+### 📱 Swipe Gestures
+* On touch-capable mobile devices, swipe left or right across the main content area (minimum 80px transition) to toggle between the list and detail views. Gestures are disabled when inputs are focused.
 
 ---
 
-## ⌨️ キーボードショートカット
+## ⌨️ Keyboard Navigation
 
-画面上で `?` キー (Shift + `/`) を押すと、いつでも右側からショートカットヘルプパネルを呼び出すことができます。
+Press `?` (Shift + `/`) on your keyboard outside of input fields to open the shortcut helper panel on the right.
 
-### A. アプリナビゲーション
-* `?` : ヘルプパネルの開閉
-* `Ctrl + \` : 左サイドバー of 表示/非表示（トグル）
-* `Alt + ↑` / `↓` : 前後のエントリーに切り替え
-* `Alt + ←` / `→` : 「エントリー詳細ビュー」と「カテゴリーのエントリー一覧ビュー」の切り替え
-* `Ctrl + O` : メモフォルダを開く
+### A. Navigation
+* `?` : Toggles the help panel
+* `Ctrl + \` : Toggles the left sidebar
+* `Alt + ↑` / `↓` : Switch to next/prev favorited entry
+* `Alt + ←` / `→` : Toggle between detail view and category list view
+* `Ctrl + O` : Open local folder picker
 
-### B. 基本操作
-* `Ctrl + C` : 新規エントリーの作成
-  * ※ 画面上のテキストを選択している状態、または入力中の場合は、通常の「文字コピー」が優先されます。
-* `Ctrl + E` : 現在開いているエントリーの編集（タイトル・カテゴリーの変更）
-* `Shift + D` / `Delete` : エントリーの削除（ゴミ箱へ移動、または完全削除）
-* `Ctrl + Enter` / `A` (非入力時) : ブロック追加ポップアップを開く
-* `Ctrl + I` : 概要セクションの直接編集を開始
-* `Ctrl + H` : 現在のエントリーのあるカテゴリーのエントリー一覧を表示
-* `Ctrl + J` / `K` : カテゴリーの切り替え（前後のカテゴリーのエントリー一覧に移動）
+### B. Core Operations
+* `Ctrl + C` : Open the new entry modal
+  * ※ Normal text copy takes precedence when text is selected or an input is active.
+* `Ctrl + E` : Edit current entry (renaming title or moving category)
+* `Shift + D` / `Delete` : Delete current entry (relocates to Trash, or deletes permanently if inside Trash)
+* `Ctrl + Enter` / `A` (except inputs) : Open the add block modal
+* `Ctrl + I` : Edit the Summary section directly
+* `Ctrl + H` : Navigate back to the parent category list
+* `Ctrl + J` / `K` : Switch category view (next/prev)
 
-### C. 項目選択時（J/K での移動時）
-* `J` / `K` : 次 / 前の項目を選択（最後 ↔ 最初でループ）
-* `Space` : 選択中のブロックカードの全文表示 / 折りたたみ
+### C. Element Focus (Using J/K navigation)
+* `J` / `K` : Select next/prev card (loops at bounds)
+* `Space` : Expand or collapse the selected block card
 * `Enter` :
-  * ブロックカード選択時 ──> 選択中のカードを編集
-  * 概要選択時 ──> 概要セクションの編集を開始
-* `M` (マージ未選択時) : 選択中のブロックカードを別のエントリーへ移動
-* `D` : 選択中のブロックカードを削除
-* `X` : マージ対象として選択 / 解除
-* `M` (マージ選択時) : 選択したブロックのマージを直接実行
+  * On a block card ──> Edit the selected block card
+  * On a summary card ──> Edit the Summary section
+* `M` (Unchecked blocks) : Relocate selected block card to another entry
+* `D` : Delete the selected block card
+* `X` : Toggle block selection for merging
+* `M` (Checked blocks) : Execute block merge directly
 
-### D. ポップアップ（モーダル）内
-* `Ctrl + Enter` : 保存して閉じる
-* `Esc` : 保存せずに閉じる
+### D. Inside Modals
+* `Ctrl + Enter` : Save changes and close modal
+* `Esc` : Close modal without saving changes
 
 ---
 
-## ⚠️ 既知の制約
-* Chromium系ブラウザ（Microsoft Edge, Google Chrome）での動作を想定しています。
-* 規定のMarkdown形式（H1, ## 概要, ## ブロック, H3[ID] 等）に従っていないエントリーファイルは「編集不可」となります。
+## ⚠️ Known Constraints
+* Designed and optimized for Chromium-based web browsers (Microsoft Edge, Google Chrome).
+* Custom files that do not adhere to the designated Markdown format (H1 title, `## Summary`, `## Block`, and metadata comments on H3 headers) will open in **Read-Only Mode**.
