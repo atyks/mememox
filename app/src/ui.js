@@ -86,6 +86,7 @@ window.EntryMemo.UI = (function () {
       newEntryTitlePlaceholder: "タイトルを入力してください",
       newEntryNewCategoryOption: "＋ 新しいカテゴリーを作って追加する",
       editEntryTitle: "エントリーの編集",
+      edit: "編集",
       editEntryTitleLabel: "エントリータイトル",
       editEntryTitlePlaceholder: "タイトルを入力してください",
       editEntryNewCategoryOption: "＋ 新しいカテゴリーを作って移動する",
@@ -246,6 +247,7 @@ window.EntryMemo.UI = (function () {
       newEntryTitlePlaceholder: "Enter entry title...",
       newEntryNewCategoryOption: "+ Create new category and add",
       editEntryTitle: "Edit Entry",
+      edit: "Edit",
       editEntryTitleLabel: "Entry Title",
       editEntryTitlePlaceholder: "Enter entry title...",
       editEntryNewCategoryOption: "+ Create new category and move",
@@ -2330,7 +2332,7 @@ window.EntryMemo.UI = (function () {
       }
     }
     if (elements.summaryEditBtn) {
-      elements.summaryEditBtn.textContent = (currentLanguage === "ja") ? `${summaryTitle}を編集` : `Edit ${summaryTitle}`;
+      elements.summaryEditBtn.textContent = t("edit", "編集");
     }
     if (elements.summaryTextarea) {
       elements.summaryTextarea.placeholder = t("summaryTextareaPlaceholder", "現在の結論、方針、未解決事項などを${summaryTitle}に記述してください...").replace("${summaryTitle}", summaryTitle);
