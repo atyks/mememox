@@ -37,6 +37,7 @@ window.EntryMemo.UI = (function () {
   const DefaultKeymaps = {
     help: { code: "Slash", shift: true },
     toggleFavorite: { key: ["s", "S"] },
+    toggleSidebar: { code: "Backslash", ctrl: true },
     showAllEntries: { code: "KeyH", ctrl: true },
     toggleSwipe: { code: "KeyL", ctrl: true },
     selectAllBlocks: { code: "KeyA", ctrl: true },
@@ -82,6 +83,62 @@ window.EntryMemo.UI = (function () {
 
   let activeKeymaps = DefaultKeymaps;
 
+  // キー表示用のHTML表現を生成する
+  function getKeyString(mapping) {
+    if (!mapping) return "";
+    if (Array.isArray(mapping)) {
+      return mapping.map(m => getKeyString(m)).join(" / ");
+    }
+    const parts = [];
+    if (mapping.ctrl) parts.push("Ctrl");
+    if (mapping.shift) parts.push("Shift");
+    if (mapping.alt) parts.push("Alt");
+    
+    let keyText = "";
+    if (mapping.code) {
+      keyText = formatKeyCode(mapping.code);
+    } else if (mapping.key) {
+      keyText = Array.isArray(mapping.key) ? mapping.key[0].toUpperCase() : mapping.key.toUpperCase();
+    }
+    
+    if (keyText) parts.push(keyText);
+    return parts.map(p => `<span class="key">${p}</span>`).join(" + ");
+  }
+
+  function formatKeyCode(code) {
+    if (Array.isArray(code)) {
+      return code.map(c => formatKeyCode(c)).join(" / ");
+    }
+    if (code.startsWith("Key")) {
+      return code.substring(3);
+    }
+    if (code.startsWith("Digit")) {
+      return code.substring(5);
+    }
+    switch (code) {
+      case "ArrowUp": return "↑";
+      case "ArrowDown": return "↓";
+      case "ArrowLeft": return "←";
+      case "ArrowRight": return "→";
+      case "Backslash": return "\\";
+      case "Slash": return "/";
+      default: return code;
+    }
+  }
+
+  // ヘルプパネル内のショートカットキー表示を動的に更新する
+  function updateHelpUI() {
+    if (!elements.shortcutHelpPanel) return;
+    const containers = elements.shortcutHelpPanel.querySelectorAll("[data-key-action]");
+    containers.forEach(el => {
+      const actionName = el.dataset.keyAction;
+      const mapping = activeKeymaps[actionName];
+      if (mapping) {
+        el.innerHTML = getKeyString(mapping);
+      }
+    });
+  }
+
   // キー入力イベントとキーマップ設定とのマッチング判定
   function matchKey(e, mapping) {
     if (!mapping) return false;
@@ -123,9 +180,11 @@ window.EntryMemo.UI = (function () {
       if (window.EntryMemo && window.EntryMemo.Keymaps) {
         activeKeymaps = Object.assign({}, DefaultKeymaps, window.EntryMemo.Keymaps);
       }
+      updateHelpUI();
     };
     script.onerror = () => {
       // 読み込めない場合はデフォルトのまま
+      updateHelpUI();
     };
     document.head.appendChild(script);
   }
@@ -258,6 +317,7 @@ window.EntryMemo.UI = (function () {
       console.error("Failed to load expandedBlocks", e);
     }
 
+    updateHelpUI();
     setupEventListeners();
     updateSortBlocksBtnText();
   }

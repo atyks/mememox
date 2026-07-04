@@ -291,37 +291,36 @@
     <div class="help-panel-body">
       <div class="help-section">
         <h4>ナビゲーション</h4>
-        <div class="help-item"><span class="key">?</span> ヘルプパネルの開閉</div>
-        <div class="help-item"><span class="key">Ctrl</span> + <span class="key">\</span> サイドバーの表示/非表示</div>
-        <div class="help-item"><span class="key">Alt</span> + <span class="key">↑</span>/<span class="key">↓</span> 前後のエントリーに切り替え</div>
-        <div class="help-item"><span class="key">Alt</span> + <span class="key">←</span>/<span class="key">→</span> ビューの切り替え</div>
-        <div class="help-item"><span class="key">Ctrl</span> + <span class="key">O</span> メモフォルダを開く</div>
+        <div class="help-item"><span data-key-action="help"><span class="key">?</span></span> ヘルプパネルの開閉</div>
+        <div class="help-item"><span data-key-action="toggleSidebar"><span class="key">Ctrl</span> + <span class="key">\</span></span> サイドバーの表示/非表示</div>
+        <div class="help-item"><span data-key-action="navigateEntryNext"><span class="key">Alt</span> + <span class="key">↑</span></span>/<span data-key-action="navigateEntryPrev"><span class="key">↓</span></span> 前後のエントリーに切り替え</div>
+        <div class="help-item"><span data-key-action="toggleViewBoard"><span class="key">Alt</span> + <span class="key">←</span></span>/<span data-key-action="toggleViewThread"><span class="key">→</span></span> ビューの切り替え</div>
+        <div class="help-item"><span data-key-action="openFolder"><span class="key">Ctrl</span> + <span class="key">O</span></span> メモフォルダを開く</div>
       </div>
       <div class="help-section">
         <h4>基本操作</h4>
-        <div class="help-item"><span class="key">Ctrl</span> + <span class="key">C</span> 新規エントリーの作成</div>
-        <div class="help-item"><span class="key">Ctrl</span> + <span class="key">E</span> エントリーの編集</div>
-        <div class="help-item"><span class="key">Shift</span> + <span class="key">D</span> / <span class="key">Delete</span> エントリーの削除 (ゴミ箱へ移動)</div>
-        <div class="help-item"><span class="key">Ctrl</span> + <span class="key">Enter</span> ブロック追加ポップアップを開く</div>
-        <div class="help-item"><span class="key">Ctrl</span> + <span class="key">I</span> 概要セクションの編集</div>
-        <div class="help-item"><span class="key">Ctrl</span> + <span class="key">H</span> カテゴリーのエントリー一覧を表示</div>
-        <div class="help-item"><span class="key">Ctrl</span> + <span class="key">J</span> / <span class="key">K</span> カテゴリーの切り替え / エントリー一覧へ</div>
+        <div class="help-item"><span data-key-action="newEntry"><span class="key">Ctrl</span> + <span class="key">C</span></span> 新規エントリーの作成</div>
+        <div class="help-item"><span data-key-action="editEntry"><span class="key">Ctrl</span> + <span class="key">E</span></span> エントリーの編集</div>
+        <div class="help-item"><span data-key-action="deleteEntry"><span class="key">Shift</span> + <span class="key">D</span> / <span class="key">Delete</span></span> エントリーの削除 (ゴミ箱へ移動)</div>
+        <div class="help-item"><span data-key-action="cardAddBlock"><span class="key">Ctrl</span> + <span class="key">Enter</span> / <span class="key">A</span></span> ブロック追加ポップアップを開く (Aは非入力時)</div>
+        <div class="help-item"><span data-key-action="editSummary"><span class="key">Ctrl</span> + <span class="key">I</span></span> 概要セクションの編集</div>
+        <div class="help-item"><span data-key-action="showAllEntries"><span class="key">Ctrl</span> + <span class="key">H</span></span> カテゴリーのエントリー一覧を表示</div>
+        <div class="help-item"><span data-key-action="navigateCategoryNextCtrl"><span class="key">Ctrl</span> + <span class="key">J</span></span> / <span data-key-action="navigateCategoryPrevCtrl"><span class="key">K</span></span> カテゴリーの切り替え / エントリー一覧へ</div>
       </div>
       <div class="help-section">
         <h4>カテゴリーのエントリー一覧画面時</h4>
-        <div class="help-item"><span class="key">J</span> / <span class="key">K</span> 次 / 前のエントリーを選択</div>
-        <div class="help-item"><span class="key">Enter</span> 選択中のエントリーを開く</div>
-        <div class="help-item"><span class="key">Ctrl</span> + <span class="key">J</span> / <span class="key">K</span> 前後のカテゴリーのエントリー一覧に移動</div>
+        <div class="help-item"><span data-key-action="categoryNavigateNext"><span class="key">J</span></span> / <span data-key-action="categoryNavigatePrev"><span class="key">K</span></span> 次 / 前のエントリーを選択</div>
+        <div class="help-item"><span data-key-action="categoryOpenEntry"><span class="key">Enter</span></span> 選択中のエントリーを開く</div>
+        <div class="help-item"><span data-key-action="navigateCategoryNextCtrl"><span class="key">Ctrl</span> + <span class="key">J</span></span> / <span data-key-action="navigateCategoryPrevCtrl"><span class="key">K</span></span> 前後のカテゴリーのエントリー一覧に移動</div>
       </div>
       <div class="help-section">
         <h4>概要・ブロックカード選択時（J/Kで移動）</h4>
-        <div class="help-item"><span class="key">J</span> / <span class="key">K</span> 次 / 前の項目（概要・ブロック）を選択</div>
-        <div class="help-item"><span class="key">Space</span> 選択中のカードの開閉</div>
-        <div class="help-item"><span class="key">Enter</span> / <span class="key">E</span> 選択中の項目（概要・ブロック）を編集</div>
-        <div class="help-item"><span class="key">M</span> 選択中のカードを移動</div>
-        <div class="help-item"><span class="key">D</span> 選択中のカードを削除</div>
-        <div class="help-item"><span class="key">X</span> マージ対象として選択 / 解除</div>
-        <div class="help-item"><span class="key">Ctrl</span> + <span class="key">M</span> 選択したブロックのマージを実行</div>
+        <div class="help-item"><span data-key-action="cardNavigateNext"><span class="key">J</span></span> / <span data-key-action="cardNavigatePrev"><span class="key">K</span></span> 次 / 前の項目（概要・ブロック）を選択</div>
+        <div class="help-item"><span data-key-action="cardToggleExpand"><span class="key">Space</span></span> 選択中のカードの開閉</div>
+        <div class="help-item"><span data-key-action="cardEdit"><span class="key">Enter</span> / <span class="key">E</span></span> 選択中の項目（概要・ブロック）を編集</div>
+        <div class="help-item"><span data-key-action="cardMoveOrMerge"><span class="key">M</span></span> 選択中のカードを移動 / マージを実行</div>
+        <div class="help-item"><span data-key-action="cardDelete"><span class="key">D</span></span> 選択中のカードを削除</div>
+        <div class="help-item"><span data-key-action="cardSelectMerge"><span class="key">X</span></span> マージ対象として選択 / 解除</div>
       </div>
       <div class="help-section">
         <h4>ポップアップ（モーダル）内</h4>
