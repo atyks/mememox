@@ -329,6 +329,9 @@ window.EntryMemo.UI = (function () {
     }
   };
 
+  // 有効な翻訳辞書（カスタム言語のロード前はデフォルト値を使用）
+  let activeTranslations = Object.assign({}, DefaultTranslations);
+
   // デフォルトのキーマップ定義
   const DefaultKeymaps = {
     help: { code: "Slash", shift: true },
