@@ -1,0 +1,91 @@
+/**
+ * mememox 言語設定（多言語化）カスタマイズ用サンプルファイル
+ * 
+ * このファイルをコピーして「langs.js」という名前で同ディレクトリに保存し、
+ * window.EntryMemo.Languages に言語データを定義することで、独自の言語を追加できます。
+ * ※「langs.js」は .gitignore に登録されており、Git 管理外となります。
+ */
+(function() {
+  window.EntryMemo = window.EntryMemo || {};
+  
+  window.EntryMemo.Languages = {
+    // 【カスタマイズ例：フランス語を追加する場合】
+    // fr: {
+    //   name: "Français",
+    //   selectLanguage: "Choisir la langue",
+    //   selectLanguageLabel: "Veuillez choisir la langue à utiliser:",
+    //   save: "Enregistrer",
+    //   cancel: "Annuler",
+    //   openFolder: "Ouvrir le dossier",
+    //   refresh: "Actualiser les données",
+    //   manual: "Ouvrir le manuel",
+    //   home: "Accueil",
+    //   newEntryBtn: "Nouvelle entrée",
+    //   demoMode: "Mode démo",
+    //   serverMode: "Mode serveur",
+    //   localFolder: "Dossier local",
+    //   languageChanged: "Langue modifiée.",
+    //   category: "Catégorie",
+    //   title: "Titre",
+    //   all: "Tout",
+    //   trash: "Corbeille",
+    //   inbox: "Boîte de réception",
+    //   thinking: "Réflexion",
+    //   work: "Travail",
+    //   openFolderSuccess: "Dossier ouvert avec succès.",
+    //   openFolderFailed: "Échec de l'ouverture du dossier: ",
+    //   initialStructureSuccess: "Structure initiale créée.",
+    //   initialStructureFailed: "Échec de la création de la structure initiale: ",
+    //   cancelInitialStructure: "Création annulée. Aucun fichier modifié.",
+    //   entryDeleteSuccess: "Entrée \"${fileName}\" supprimée définitivement.",
+    //   entryDeleteFailed: "Échec de la suppression de l'entrée: ",
+    //   entryCreateSuccess: "Nouvelle entrée \"${title}\" créée.",
+    //   entryCreateFailed: "Échec de la création de l'entrée: ",
+    //   entryUpdateSuccess: "Entrée enregistrée avec succès.",
+    //   entryUpdateFailed: "Échec de l'enregistrement de l'entrée: ",
+    //   blockUpdateSuccess: "Bloc enregistré avec succès.",
+    //   blockUpdateFailed: "Échec de l'enregistrement du bloc: ",
+    //   blockDeleteSuccess: "Bloc supprimé avec succès.",
+    //   blockDeleteFailed: "Échec de la suppression du bloc: ",
+    //   blockMoveSuccess: "Bloc déplacé avec succès.",
+    //   blockMoveFailed: "Échec du déplacement du bloc: ",
+    //   blockMergeSuccess: "Blocs fusionnés avec succès.",
+    //   blockMergeFailed: "Échec de la fusion des blocs: ",
+    //   confirmDeleteEntry: "Voulez-vous vraiment supprimer définitivement l'entrée \"${fileName}\"?\nCette action est irréversible.",
+    //   confirmDeleteBlock: "Voulez-vous vraiment supprimer ce bloc?",
+    //   confirmInitialStructure: "Voulez-vous initialiser la structure dans ce répertoire?\n\ninbox/\n  inbox.md\nthinking/\n  entry-memo-system.md\nwork/\n  work-memo-environment.md",
+    //   warningDemoSave: "Attention: Les modifications en mode démo seront perdues lors du rechargement.",
+    //   newEntryTitle: "Nouvelle entrée",
+    //   newEntryCategoryLabel: "Catégorie",
+    //   newEntryTitleLabel: "Titre",
+    //   newEntryTitlePlaceholder: "Saisir le titre...",
+    //   newEntryNewCategoryOption: "+ Créer une nouvelle catégorie et ajouter",
+    //   editEntryTitle: "Modifier l'entrée",
+    //   editEntryTitleLabel: "Titre de l'entrée",
+    //   editEntryTitlePlaceholder: "Saisir le titre...",
+    //   editEntryNewCategoryOption: "+ Créer une nouvelle catégorie et déplacer",
+    //   editEntryCategorySelectLabel: "Déplacer vers la catégorie",
+    //   editEntryNewCategoryLabel: "Nom de la nouvelle catégorie",
+    //   editEntryNewCategoryPlaceholder: "Saisir le nom...",
+    //   addBlockTitle: "Ajouter un nouveau bloc",
+    //   editBlockTitle: "Modifier le bloc",
+    //   blockTitleLabel: "Titre du bloc (optionnel)",
+    //   blockTitlePlaceholder: "En-tête de bloc",
+    //   blockBodyLabel: "Corps du bloc",
+    //   blockBodyPlaceholder: "Saisir le contenu en Markdown...",
+    //   moveBlockTitle: "Déplacer le bloc",
+    //   moveBlockTargetLabel: "Entrée de destination",
+    //   moveBlockTargetPlaceholder: "Choisir l'entrée...",
+    //   mergeActionBarTitle: "Blocs sélectionnés",
+    //   mergeActionBarBtn: "Fusionner",
+    //   mergeActionBarRelocateBtn: "Déplacement groupé",
+    //   mergeActionBarDeleteBtn: "Suppression groupée",
+    //   confirmMoveToTrash: "Voulez-vous déplacer l'entrée \"${fileName}\" vers la corbeille?",
+    //   warningLocalFolderUnsupported: "Votre navigateur ne supporte pas l'accès au dossier local. Exécution en mode démo.",
+    //   favoriteAdded: "Ajouté aux favoris.",
+    //   favoriteRemoved: "Retiré des favoris.",
+    //   entryEditSuccessMove: "Entrée déplacée vers \"${category}\" et titre mis à jour.",
+    //   entryEditSuccessTitle: "Titre mis à jour."
+    // }
+  };
+})();

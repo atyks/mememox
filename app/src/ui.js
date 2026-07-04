@@ -33,6 +33,168 @@ window.EntryMemo.UI = (function () {
     return tag === "input" || tag === "textarea" || activeEl.isContentEditable;
   };
 
+  // デフォルトの多言語翻訳辞書定義
+  const DefaultTranslations = {
+    ja: {
+      name: "日本語",
+      selectLanguage: "言語の選択",
+      selectLanguageLabel: "使用する言語を選択してください：",
+      save: "保存",
+      cancel: "キャンセル",
+      openFolder: "フォルダを開く",
+      refresh: "最新の情報に更新",
+      manual: "操作マニュアルを開く",
+      home: "ホーム",
+      newEntryBtn: "新規エントリー",
+      demoMode: "デモモード",
+      serverMode: "サーバーモード",
+      localFolder: "ローカルフォルダ",
+      languageChanged: "言語を変更しました。",
+      category: "カテゴリー",
+      title: "タイトル",
+      all: "すべて",
+      trash: "ゴミ箱",
+      inbox: "インボックス",
+      thinking: "思考",
+      work: "作業",
+      openFolderSuccess: "フォルダを開きました。",
+      openFolderFailed: "フォルダを開けませんでした：",
+      initialStructureSuccess: "初期構造を作成しました。",
+      initialStructureFailed: "初期構造の作成に失敗しました：",
+      cancelInitialStructure: "初期構造の作成をキャンセルしました。ファイルを変更していません。",
+      entryDeleteSuccess: "エントリーを削除しました。",
+      entryDeleteFailed: "エントリーの削除に失敗しました：",
+      entryCreateSuccess: "エントリーを作成しました。",
+      entryCreateFailed: "エントリーの作成に失敗しました：",
+      entryUpdateSuccess: "エントリーを保存しました。",
+      entryUpdateFailed: "エントリーの保存に失敗しました：",
+      blockUpdateSuccess: "ブロックを保存しました。",
+      blockUpdateFailed: "ブロックの保存に失敗しました：",
+      blockDeleteSuccess: "ブロックを削除しました。",
+      blockDeleteFailed: "ブロックの削除に失敗しました：",
+      blockMoveSuccess: "ブロックを移動しました。",
+      blockMoveFailed: "ブロックの移動に失敗しました：",
+      blockMergeSuccess: "ブロックをマージしました。",
+      blockMergeFailed: "ブロックのマージに失敗しました：",
+      confirmDeleteEntry: "エントリー \"${fileName}\" を完全に削除しますか？\nこの操作は取り消せません。",
+      confirmDeleteBlock: "このブロックを削除しますか？",
+      confirmInitialStructure: "このフォルダに初期構造を作成しますか？\n\ninbox/\n  inbox.md\nthinking/\n  entry-memo-system.md\nwork/\n  work-memo-environment.md",
+      warningDemoSave: "注意: デモモードの変更はブラウザのリロードで消失します。",
+      newEntryTitle: "新規エントリー",
+      newEntryCategoryLabel: "カテゴリー",
+      newEntryTitleLabel: "タイトル",
+      newEntryTitlePlaceholder: "タイトルを入力してください",
+      newEntryNewCategoryOption: "＋ 新しいカテゴリーを作って追加する",
+      editEntryTitle: "エントリーの編集",
+      editEntryTitleLabel: "エントリータイトル",
+      editEntryTitlePlaceholder: "タイトルを入力してください",
+      editEntryNewCategoryOption: "＋ 新しいカテゴリーを作って移動する",
+      editEntryCategorySelectLabel: "移動先のカテゴリー",
+      editEntryNewCategoryLabel: "新しいカテゴリー名",
+      editEntryNewCategoryPlaceholder: "新しいカテゴリーの名前を入力してください",
+      addBlockTitle: "新規ブロックの追加",
+      editBlockTitle: "ブロックの編集",
+      blockTitleLabel: "ブロックタイトル（任意）",
+      blockTitlePlaceholder: "ブロックの見出し（省略可能）",
+      blockBodyLabel: "ブロック本文",
+      blockBodyPlaceholder: "メモの内容をMarkdown形式で入力してください",
+      moveBlockTitle: "ブロックの移動",
+      moveBlockTargetLabel: "移動先のエントリー",
+      moveBlockTargetPlaceholder: "移動先のエントリー名を選択または検索",
+      mergeActionBarTitle: "選択されたブロック",
+      mergeActionBarBtn: "マージ",
+      mergeActionBarRelocateBtn: "一括移動",
+      mergeActionBarDeleteBtn: "一括削除",
+      
+      // 動的追加キー
+      confirmMoveToTrash: "エントリー \"${fileName}\" を「ゴミ箱」カテゴリーへ移動しますか？",
+      warningLocalFolderUnsupported: "お使いのブラウザはローカルフォルダの読み書きに対応していません。デモモードのみご利用いただけます。",
+      favoriteAdded: "お気に入り（Pickup）に追加しました。",
+      favoriteRemoved: "お気に入りから解除しました。",
+      entryEditSuccessMove: "エントリーを「${category}」に移動し、タイトルを更新しました。",
+      entryEditSuccessTitle: "エントリータイトルを更新しました。"
+    },
+    en: {
+      name: "English",
+      selectLanguage: "Select Language",
+      selectLanguageLabel: "Please select a language to use:",
+      save: "Save",
+      cancel: "Cancel",
+      openFolder: "Open Folder",
+      refresh: "Refresh Data",
+      manual: "Open Manual",
+      home: "Home",
+      newEntryBtn: "New Entry",
+      demoMode: "Demo Mode",
+      serverMode: "Server Mode",
+      localFolder: "Local Folder",
+      languageChanged: "Language changed.",
+      category: "Category",
+      title: "Title",
+      all: "All",
+      trash: "Trash",
+      inbox: "Inbox",
+      thinking: "Thinking",
+      work: "Work",
+      openFolderSuccess: "Folder opened successfully.",
+      openFolderFailed: "Failed to open folder: ",
+      initialStructureSuccess: "Initial folder structure created.",
+      initialStructureFailed: "Failed to create initial structure: ",
+      cancelInitialStructure: "Initial structure creation cancelled. No files modified.",
+      entryDeleteSuccess: "Entry \"${fileName}\" permanently deleted.",
+      entryDeleteFailed: "Failed to delete entry: ",
+      entryCreateSuccess: "New entry \"${title}\" created.",
+      entryCreateFailed: "Failed to create entry: ",
+      entryUpdateSuccess: "Entry saved successfully.",
+      entryUpdateFailed: "Failed to save entry: ",
+      blockUpdateSuccess: "Block saved successfully.",
+      blockUpdateFailed: "Failed to save block: ",
+      blockDeleteSuccess: "Block deleted successfully.",
+      blockDeleteFailed: "Failed to delete block: ",
+      blockMoveSuccess: "Block moved successfully.",
+      blockMoveFailed: "Failed to move block: ",
+      blockMergeSuccess: "Blocks merged successfully.",
+      blockMergeFailed: "Failed to merge blocks: ",
+      confirmDeleteEntry: "Are you sure you want to permanently delete entry \"${fileName}\"?\nThis action cannot be undone.",
+      confirmDeleteBlock: "Are you sure you want to delete this block?",
+      confirmInitialStructure: "Do you want to initialize structure in this directory?\n\ninbox/\n  inbox.md\nthinking/\n  entry-memo-system.md\nwork/\n  work-memo-environment.md",
+      warningDemoSave: "Warning: Changes in Demo Mode will be lost upon reloading the browser.",
+      newEntryTitle: "New Entry",
+      newEntryCategoryLabel: "Category",
+      newEntryTitleLabel: "Title",
+      newEntryTitlePlaceholder: "Enter entry title...",
+      newEntryNewCategoryOption: "+ Create new category and add",
+      editEntryTitle: "Edit Entry",
+      editEntryTitleLabel: "Entry Title",
+      editEntryTitlePlaceholder: "Enter entry title...",
+      editEntryNewCategoryOption: "+ Create new category and move",
+      editEntryCategorySelectLabel: "Move to Category",
+      editEntryNewCategoryLabel: "New Category Name",
+      editEntryNewCategoryPlaceholder: "Enter new category name...",
+      addBlockTitle: "Add New Block",
+      editBlockTitle: "Edit Block",
+      blockTitleLabel: "Block Title (Optional)",
+      blockTitlePlaceholder: "Block heading (can be blank)",
+      blockBodyLabel: "Block Body",
+      blockBodyPlaceholder: "Enter memo contents in Markdown...",
+      moveBlockTitle: "Move Block",
+      moveBlockTargetLabel: "Destination Entry",
+      moveBlockTargetPlaceholder: "Select or search target entry...",
+      mergeActionBarTitle: "Selected Blocks",
+      mergeActionBarBtn: "Merge",
+      mergeActionBarRelocateBtn: "Batch Move",
+      mergeActionBarDeleteBtn: "Batch Delete",
+      
+      // 動的追加キー
+      confirmMoveToTrash: "Do you want to relocate entry \"${fileName}\" to the Trash category?",
+      warningLocalFolderUnsupported: "Your browser does not support local directory access. Running in Demo Mode.",
+      favoriteAdded: "Added to favorites.",
+      favoriteRemoved: "Removed from favorites.",
+      entryEditSuccessMove: "Relocated entry to \"${category}\" and updated title.",
+      entryEditSuccessTitle: "Entry title updated."
+    }
+  };
+
   // デフォルトのキーマップ定義
   const DefaultKeymaps = {
     help: { code: "Slash", shift: true },
@@ -191,6 +353,126 @@ window.EntryMemo.UI = (function () {
     document.head.appendChild(script);
   }
 
+  // 外部カスタマイズ言語ファイルの非同期読み込み
+  function initLangs(callback) {
+    const script = document.createElement("script");
+    script.src = "src/langs.js";
+    script.onload = () => {
+      if (window.EntryMemo && window.EntryMemo.Languages) {
+        activeTranslations = Object.assign({}, DefaultTranslations, window.EntryMemo.Languages);
+        console.log("Custom languages loaded successfully from src/langs.js");
+      }
+      if (callback) callback();
+    };
+    script.onerror = () => {
+      console.log("Optional custom languages (src/langs.js) not found. Using default languages.");
+      if (callback) callback();
+    };
+    document.head.appendChild(script);
+  }
+
+  function initLanguage() {
+    const savedLang = localStorage.getItem("EntryMemo.language");
+    if (savedLang) {
+      currentLanguage = savedLang;
+    } else {
+      const browserLang = (navigator.language || navigator.userLanguage || "ja").toLowerCase();
+      if (browserLang.startsWith("en")) {
+        currentLanguage = "en";
+      } else {
+        currentLanguage = "ja";
+      }
+    }
+  }
+
+  function t(key, fallback = "") {
+    const lang = currentLanguage;
+    const dict = activeTranslations[lang] || activeTranslations["ja"];
+    return dict[key] || fallback || key;
+  }
+
+  function updateLanguageUI() {
+    const lang = currentLanguage;
+    const dict = activeTranslations[lang] || activeTranslations["ja"];
+    
+    // data-i18n
+    const i18nElements = document.querySelectorAll("[data-i18n]");
+    i18nElements.forEach(el => {
+      const key = el.dataset.i18n;
+      if (dict[key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = dict[key];
+        } else {
+          el.textContent = dict[key];
+        }
+      }
+    });
+
+    // data-i18n-title
+    const titleElements = document.querySelectorAll("[data-i18n-title]");
+    titleElements.forEach(el => {
+      const key = el.dataset.i18nTitle;
+      if (dict[key]) {
+        el.title = dict[key];
+      }
+    });
+
+    document.documentElement.lang = lang;
+  }
+
+  function openLanguageModal() {
+    const listContainer = document.getElementById("language-options-list");
+    if (!listContainer) return;
+    
+    listContainer.innerHTML = "";
+    
+    const availableLangs = Object.keys(activeTranslations);
+    availableLangs.forEach(langCode => {
+      const langName = activeTranslations[langCode].name || langCode;
+      
+      const optionRow = document.createElement("label");
+      optionRow.style.display = "flex";
+      optionRow.style.alignItems = "center";
+      optionRow.style.gap = "8px";
+      optionRow.style.cursor = "pointer";
+      optionRow.style.padding = "6px 0";
+      
+      const radio = document.createElement("input");
+      radio.type = "radio";
+      radio.name = "lang-selection";
+      radio.value = langCode;
+      radio.checked = (langCode === currentLanguage);
+      
+      const labelText = document.createTextNode(langName);
+      
+      optionRow.appendChild(radio);
+      optionRow.appendChild(labelText);
+      listContainer.appendChild(optionRow);
+    });
+    
+    openModal(document.getElementById("language-modal"));
+  }
+
+  function saveLanguageSelection() {
+    const listContainer = document.getElementById("language-options-list");
+    if (!listContainer) return;
+    
+    const checkedRadio = listContainer.querySelector("input[name='lang-selection']:checked");
+    if (checkedRadio) {
+      const newLang = checkedRadio.value;
+      if (newLang !== currentLanguage) {
+        currentLanguage = newLang;
+        localStorage.setItem("EntryMemo.language", newLang);
+        updateLanguageUI();
+        showToast(t("languageChanged", "Language changed."), "success");
+        if (window.EntryMemo.App && typeof window.EntryMemo.App.refreshCurrentView === "function") {
+          window.EntryMemo.App.refreshCurrentView();
+        }
+      }
+    }
+    closeModal(document.getElementById("language-modal"));
+  }
+
   /**
    * UIの初期化
    */
@@ -306,7 +588,14 @@ window.EntryMemo.UI = (function () {
       openFolderBtn: document.getElementById("open-folder-btn"),
       currentModeBadge: document.getElementById("current-mode-badge"),
       toastContainer: document.getElementById("toast-container"),
-      loadingOverlay: document.getElementById("loading-overlay")
+      loadingOverlay: document.getElementById("loading-overlay"),
+
+      // 言語設定関連
+      headerLangBtn: document.getElementById("header-lang-btn"),
+      languageModal: document.getElementById("language-modal"),
+      languageSaveBtn: document.getElementById("language-save-btn"),
+      languageCancelBtn: document.getElementById("language-cancel-btn"),
+      languageOptionsList: document.getElementById("language-options-list")
     };
 
     // expandedBlockIdsの初期読み込み
@@ -318,6 +607,12 @@ window.EntryMemo.UI = (function () {
     } catch (e) {
       console.error("Failed to load expandedBlocks", e);
     }
+
+    // 言語設定の初期化
+    initLanguage();
+    initLangs(() => {
+      updateLanguageUI();
+    });
 
     updateHelpUI();
     setupEventListeners();
@@ -489,6 +784,19 @@ window.EntryMemo.UI = (function () {
    * イベントリスナーのセットアップ
    */
   function setupEventListeners() {
+    // 言語切り替えボタンとモーダル操作
+    if (elements.headerLangBtn) {
+      elements.headerLangBtn.addEventListener("click", openLanguageModal);
+    }
+    if (elements.languageSaveBtn) {
+      elements.languageSaveBtn.addEventListener("click", saveLanguageSelection);
+    }
+    if (elements.languageCancelBtn) {
+      elements.languageCancelBtn.addEventListener("click", () => {
+        closeModal(elements.languageModal);
+      });
+    }
+
     // フォルダ選択
     elements.openFolderBtn.addEventListener("click", () => {
       window.EntryMemo.App.handleOpenFolder();
@@ -524,10 +832,11 @@ window.EntryMemo.UI = (function () {
       });
     }
 
-    // ヘルプ（共通ヘッダーボタン）
+    // ヘルプ（共通ヘッダーボタン - マニュアルを開く）
     if (elements.headerHelpBtn) {
       elements.headerHelpBtn.addEventListener("click", () => {
-        toggleHelpPanel();
+        const manualFile = (currentLanguage === "ja") ? "how-to-use.ja.md" : "how-to-use.md";
+        window.open(manualFile, "_blank");
       });
     }
 
@@ -2262,6 +2571,8 @@ window.EntryMemo.UI = (function () {
 
   return {
     init,
+    t,
+    updateLanguageUI,
     showToast,
     showLoading,
     hideLoading,

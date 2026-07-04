@@ -13,14 +13,15 @@
   <header id="header-bar">
     <div class="header-left">
       <span class="logo" style="cursor: pointer;">🧵 mememox</span>
-      <span id="current-mode-badge" class="badge-demo" style="margin-left: 12px;">デモモード</span>
+      <span id="current-mode-badge" class="badge-demo" style="margin-left: 12px;" data-i18n="demoMode">デモモード</span>
     </div>
     <div class="header-actions">
-      <button id="open-folder-btn" class="btn-icon" title="フォルダを開く">📁</button>
-      <button id="header-refresh-btn" class="btn-icon" title="最新の情報に更新">🔄</button>
-      <button id="header-help-btn" class="btn-icon" title="操作マニュアルを開く">❓</button>
-      <button id="header-home-btn" class="btn-icon" title="ホーム">🏠</button>
-      <button id="header-new-entry-btn" class="btn-icon" title="新規エントリー">+</button>
+      <button id="header-lang-btn" class="btn-icon" title="言語の選択" data-i18n-title="selectLanguage">🌐</button>
+      <button id="open-folder-btn" class="btn-icon" title="フォルダを開く" data-i18n-title="openFolder">📁</button>
+      <button id="header-refresh-btn" class="btn-icon" title="最新の情報に更新" data-i18n-title="refresh">🔄</button>
+      <button id="header-help-btn" class="btn-icon" title="操作マニュアルを開く" data-i18n-title="manual">❓</button>
+      <button id="header-home-btn" class="btn-icon" title="ホーム" data-i18n-title="home">🏠</button>
+      <button id="header-new-entry-btn" class="btn-icon" title="新規エントリー" data-i18n-title="newEntryBtn">+</button>
     </div>
   </header>
 
@@ -278,6 +279,23 @@
       <div class="form-group">
         <label for="edit-entry-new-category-input">新しいカテゴリー名</label>
         <input type="text" id="edit-entry-new-category-input" placeholder="新しいカテゴリーの名前を入力してください">
+      </div>
+    </div>
+  </div>
+
+  <!-- モーダル: 言語の選択 -->
+  <div id="language-modal" class="modal">
+    <div class="modal-header-row">
+      <h3 class="modal-title" data-i18n="selectLanguage">言語の選択</h3>
+      <div class="modal-actions">
+        <button id="language-save-btn" class="btn-primary btn-sm" data-i18n="save">保存</button>
+        <button id="language-cancel-btn" class="btn-secondary btn-sm" data-i18n="cancel">キャンセル</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label data-i18n="selectLanguageLabel">使用する言語を選択してください：</label>
+      <div id="language-options-list" class="language-options-list" style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+        <!-- JSで動的に追加 -->
       </div>
     </div>
   </div>

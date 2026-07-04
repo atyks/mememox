@@ -4,6 +4,8 @@ data/*
 !data/.gitkeep
 app/src/keymaps.js
 app/config.json
+app/src/langs.js
+
 
 
 

@@ -125,7 +125,7 @@ window.EntryMemo.App = (function () {
  
       // File System Access APIの非対応ブラウザチェック
       if (typeof window.showDirectoryPicker !== "function") {
-        UI.showToast("お使いのブラウザはローカルフォルダの読み書きに対応していません。デモモードのみご利用いただけます。", "warning");
+        UI.showToast(UI.t("warningLocalFolderUnsupported", "お使いのブラウザはローカルフォルダの読み書きに対応していません。デモモードのみご利用いただけます。"), "warning");
         const openBtn = document.getElementById("open-folder-btn");
         if (openBtn) {
           openBtn.disabled = true;
@@ -449,31 +449,20 @@ window.EntryMemo.App = (function () {
         });
       }
 
-      const fsStorage = new Storage.FileSystemStorage(dirHandle);
-      const hasCategories = await fsStorage.init();
-
       if (!hasCategories) {
-        const confirmCreate = confirm(
-          "このフォルダに初期構造を作成しますか？\n\n" +
-          "inbox/\n" +
-          "  inbox.md\n" +
-          "thinking/\n" +
-          "  entry-memo-system.md\n" +
-          "work/\n" +
-          "  work-memo-environment.md"
-        );
+        const confirmCreate = confirm(UI.t("confirmInitialStructure", "このフォルダに初期構造を作成しますか？"));
 
         if (confirmCreate) {
           try {
             await fsStorage.createInitialStructure();
-            UI.showToast("初期構造を作成しました。", "success");
+            UI.showToast(UI.t("initialStructureSuccess", "初期構造を作成しました。"), "success");
           } catch (createErr) {
             console.error(createErr);
-            UI.showToast(`初期構造の作成に失敗しました: ${createErr.message}`, "error");
+            UI.showToast(`${UI.t("initialStructureFailed", "初期構造の作成に失敗しました：")}${createErr.message}`, "error");
             return;
           }
         } else {
-          UI.showToast("初期構造の作成をキャンセルしました。ファイルを変更していません。", "warning");
+          UI.showToast(UI.t("cancelInitialStructure", "初期構造の作成をキャンセルしました。ファイルを変更していません。"), "warning");
           return;
         }
       }
@@ -523,7 +512,7 @@ window.EntryMemo.App = (function () {
       // 重複解決を含めてファイルを作成
       const actualFileName = await currentStorage.createEntry(categoryName, fileNameCandidates, initialMd);
       
-      UI.showToast(`新しいエントリー "${title}" を作成しました。`, "success");
+      UI.showToast(UI.t("entryCreateSuccess", "新しいエントリー \"${title}\" を作成しました。").replace("${title}", title), "success");
       
       // 作成したエントリーを開く
       await handleSelectEntry(categoryName, actualFileName);
@@ -543,8 +532,8 @@ window.EntryMemo.App = (function () {
 
     const isTrash = categoryName === "ゴミ箱" || categoryName === "trash";
     const confirmMessage = isTrash 
-      ? `エントリー "${fileName}" を完全に削除しますか？\nこの操作は取り消せません。`
-      : `エントリー "${fileName}" を「ゴミ箱」カテゴリーへ移動しますか？`;
+      ? UI.t("confirmDeleteEntry", "エントリー \"${fileName}\" を完全に削除しますか？\nこの操作は取り消せません。").replace("${fileName}", fileName)
+      : UI.t("confirmMoveToTrash", "エントリー \"${fileName}\" を「ゴミ箱」カテゴリーへ移動しますか？").replace("${fileName}", fileName);
 
     if (!confirm(confirmMessage)) return;
 
@@ -554,13 +543,13 @@ window.EntryMemo.App = (function () {
         await currentStorage.deleteEntry(categoryName, fileName);
         favorites.delete(`${categoryName}/${fileName}`);
         saveFavorites();
-        UI.showToast(`エントリー "${fileName}" を完全に削除しました。`, "success");
+        UI.showToast(UI.t("entryDeleteSuccess", "エントリー \"${fileName}\" を完全に削除しました。").replace("${fileName}", fileName), "success");
       } else {
         const actualFileName = await currentStorage.moveEntry(categoryName, fileName, "ゴミ箱", fileName);
         favorites.delete(`${categoryName}/${fileName}`);
         favorites.delete(`ゴミ箱/${actualFileName}`);
         saveFavorites();
-        UI.showToast(`エントリー "${fileName}" を「ゴミ箱」カテゴリーに移動しました。`, "success");
+        UI.showToast(UI.t("entryMoveToTrashSuccess", "エントリー \"${fileName}\" を「ゴミ箱」カテゴリーに移動しました。").replace("${fileName}", fileName), "success");
       }
 
       // 初期エントリーを開き直す
@@ -611,9 +600,9 @@ window.EntryMemo.App = (function () {
           saveFavorites();
         }
 
-        UI.showToast(`エントリーを「${newCategoryName}」に移動し、タイトルを更新しました。`, "success");
+        UI.showToast(UI.t("entryEditSuccessMove", "エントリーを「${category}」に移動し、タイトルを更新しました。").replace("${category}", newCategoryName), "success");
       } else {
-        UI.showToast("エントリータイトルを更新しました。", "success");
+        UI.showToast(UI.t("entryEditSuccessTitle", "エントリータイトルを更新しました。"), "success");
       }
 
       // 開き直す
@@ -933,7 +922,7 @@ window.EntryMemo.App = (function () {
         localStorage.setItem("EntryMemo.favorites", JSON.stringify(list));
       }
 
-      UI.showToast(isFavNow ? "お気に入り（Pickup）に追加しました。" : "お気に入りから解除しました。", "success");
+      UI.showToast(isFavNow ? UI.t("favoriteAdded", "お気に入り（Pickup）に追加しました。") : UI.t("favoriteRemoved", "お気に入りから解除しました。"), "success");
       
       // UIの再描画
       if (activeCategory === "すべてのエントリー") {
