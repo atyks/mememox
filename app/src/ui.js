@@ -355,7 +355,6 @@ window.EntryMemo.UI = (function () {
       confirmMergeSelectedBlocks: "Are you sure you want to merge the ${count} selected block(s) into one?\nAfter merging, the heading levels of the original blocks will be lowered by one step and integrated into a single block within the current entry.",
       confirmDeleteBlockId: "Are you sure you want to delete this block [${id}]?\nThis action cannot be undone."
     }
-    }
   };
 
   // 有効な翻訳辞書（カスタム言語のロード前はデフォルト値を使用）
