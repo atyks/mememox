@@ -1,38 +1,40 @@
-# mememox (🧵 メモツール)
+# mememox (🧵 Memo Tool)
 
-Markdownファイルをベースとした、カード型のブロック構造を持つ軽量・安全なエントリー型メモシステムです。
-PCブラウザおよびスマートフォンで快適に動作し、データをローカルフォルダまたはサーバーへ隔離して安全に管理できます。
+English | [日本語 (Japanese)](README.ja.md)
 
-## ディレクトリ構造
+`mememox` is a lightweight, secure, and card-based block structure note system using Markdown files as the data store.
+It is optimized for both PC browsers and smartphones, allowing you to manage your notes securely by hosting them locally or on an isolated server via APIs.
 
-* `app/` - フロントエンドの静的Webアプリケーション
-  * `index.html` - メインのHTMLファイル（更新ボタン、スマホ用 Pull-to-refresh 対応）
-  * `style.css` - UIレイアウトとデザイン
-  * `app.js` - アプリの制御・状態管理ロジック（インメモリキャッシュ・お気に入り管理共通化）
-  * `src/` - 各種機能モジュール
-    * `storage.js` - メモデータ（デモ、ローカル、サーバーAPIのインメモリキャッシュ同期）の入出力
-    * `ui.js` - DOMレンダリング、3階層パンくず、タッチジェスチャー、キーボードショートカット
-    * `markdown.js` - 独自Markdown形式のパースとシリアライズ
-    * `utils.js` - 共通ユーティリティ
-  * `how-to-use.md` - アプリケーションの操作マニュアル
-* `util/` - システム連携用API配置ディレクトリ（Git追跡対象外の空フォルダ）
-* `specification_for_api.md` - サーバーサイドで動作するAPIを様々な言語・環境で独自に実装するための、プラットフォームに依存しない開発ガイドライン
-* `specification.md` - アプリ全体の基本設計・動作仕様書
+## Directory Structure
 
-## 起動方法
+* `app/` - Frontend Static Web Application
+  * `index.html` - Main HTML file (supports refresh button and mobile Pull-to-refresh)
+  * `style.css` - UI layout and styling
+  * `app.js` - App control and state management logic (in-memory cached sync)
+  * `src/` - Feature modules
+    * `storage.js` - Data input/output (Demo / FileSystem / cached Server API sync)
+    * `ui.js` - DOM rendering, 3-tier breadcrumbs, touch gestures, keyboard shortcuts
+    * `markdown.js` - Parser and serializer for custom Markdown formats
+    * `utils.js` - Common utilities
+  * `how-to-use.md` - Operation manual (Japanese)
+* `util/` - API deployment directory for server integration (git-ignored empty folder)
+* `specification_for_api.md` - Platform-independent server API guidelines for implementing backend endpoints in various languages/environments.
+* `specification.md` - System design and technical specification sheet (Japanese)
 
-### ローカル（デモモード / ローカルフォルダ）
-1. `app/index.html` をブラウザで直接開きます。
-2. 「デモモード」で動作を開始します。
-3. 画面右上の **フォルダを開く** ボタン（📁）からローカルの任意のフォルダを選択することで、ブラウザの File System Access API を介してローカルのMarkdownメモを直接読み書きできるようになります。
+## Getting Started
 
-### サーバー連携モード
-データをサーバーの公開領域外に隔離して、複数端末から安全にAPI経由でアクセスさせることができます。
-1. 本アプリの動作に必要なサーバーサイドAPI仕様は、ルートディレクトリ内の [specification_for_api.md](specification_for_api.md) に定義されています。
-2. この仕様に基づき、ご利用のサーバー環境（PHP, Node.js, Python, Go等）に適したAPIプログラムを作成し、`util/` ディレクトリ内に配置してください。
-3. `app` ディレクトリ以下をWebサーバー上に公開し、`http://` または `https://` でアクセスすると、自動的にサーバーモードとして起動します。
+### Local Use (Demo Mode / Local Folder Integration)
+1. Open `app/index.html` directly in your Chromium-based browser (Edge, Chrome, etc.).
+2. The app starts in **Demo Mode** by default.
+3. Click the **Open Folder** button (📁) at the top-right of the screen and select any local directory. The app uses the File System Access API to read and write your Markdown notes directly on your local storage.
 
-## ライセンス・ポリシー
+### Server Integration Mode
+You can isolate your data outside the public web server root and access it securely via APIs from multiple devices.
+1. The server-side API requirements are defined in [specification_for_api.md](specification_for_api.md).
+2. Based on this specification, implement the backend program tailored to your server environment (PHP, Node.js, Python, Go, etc.) and place it in the `util/` directory.
+3. Deploy the `app/` folder to your web server and access it via `http://` or `https://`. The app will automatically boot into server mode with cached ultra-fast sync.
 
-* セキュリティ向上の観点から、サーバーサイドAPIの実装スクリプト自体は本リポジトリに同梱・配布していません。
-* [specification_for_api.md](specification_for_api.md) の内容を生成系AI（ChatGPT, Claude, Gemini等）に入力し、お使いのホスティングサーバーに合わせたAPIスクリプトを各自生成して設置してください。
+## License & Policies
+
+* For security reasons, backend API implementation scripts are not packaged or distributed in this repository.
+* Please feed the [specification_for_api.md](specification_for_api.md) into generative AI tools (ChatGPT, Claude, Gemini, etc.) to generate API scripts tailored to your hosting environment.
