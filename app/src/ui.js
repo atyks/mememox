@@ -1252,6 +1252,11 @@ window.EntryMemo.UI = (function () {
       const body = elements.blockInputBody.value;
       const editingBlockId = elements.blockModal.dataset.editingBlockId;
       
+      if (!editingBlockId && !title && !body.trim()) {
+        closeModal();
+        return;
+      }
+      
       elements.blockModalSaveBtn.disabled = true;
       elements.blockModalCancelBtn.disabled = true;
       showLoading("ブロックを保存中...");
