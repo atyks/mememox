@@ -1133,11 +1133,6 @@ window.EntryMemo.UI = (function () {
             elements.summaryEditBtn.click();
             setTimeout(() => elements.summaryTextarea.focus(), 50);
           }
-        } else if (e.code === "KeyM") { // Ctrl + M マージ
-          if (!isModalOpen && !isSummaryEditing) {
-            e.preventDefault();
-            elements.mergeSubmitBtn.click();
-          }
         } else if (e.code === "KeyH") { // Ctrl + H 一番最初の画面に戻る
           if (!isModalOpen && !isSummaryEditing) {
             e.preventDefault();
@@ -1242,12 +1237,19 @@ window.EntryMemo.UI = (function () {
                 if (editBtn) editBtn.click();
               }
             } else if (e.code === "KeyM") {
-              if (focusedBlockIndex >= 1 && focusedBlockIndex <= cards.length) {
+              const checkedBoxes = Array.from(elements.blocksList.querySelectorAll(".block-select-checkbox:checked"));
+              if (checkedBoxes.length > 0) {
+                e.preventDefault();
+                elements.mergeSubmitBtn.click();
+              } else if (focusedBlockIndex >= 1 && focusedBlockIndex <= cards.length) {
                 e.preventDefault();
                 const targetCard = cards[focusedBlockIndex - 1];
                 const moveBtn = Array.from(targetCard.querySelectorAll(".block-footer button")).find(b => b.textContent === "移動");
                 if (moveBtn) moveBtn.click();
               }
+            } else if (e.code === "KeyA") {
+              e.preventDefault();
+              triggerAddBlock();
             } else if (e.code === "KeyD") {
               if (performBatchDelete()) {
                 e.preventDefault();
