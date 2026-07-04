@@ -112,7 +112,12 @@ window.EntryMemo.UI = (function () {
       favoriteAdded: "お気に入り（Pickup）に追加しました。",
       favoriteRemoved: "お気に入りから解除しました。",
       entryEditSuccessMove: "エントリーを「${category}」に移動し、タイトルを更新しました。",
-      entryEditSuccessTitle: "エントリータイトルを更新しました。"
+      entryEditSuccessTitle: "エントリータイトルを更新しました。",
+      summary: "概要",
+      summaryTextareaPlaceholder: "現在の結論、方針、未解決事項などを${summaryTitle}に記述してください...",
+      viewModeGroup: "カテゴリー別 ↕",
+      viewModeFlat: "新着順（一列） ↕",
+      noEntries: "登録されたエントリーがありません。"
     },
     en: {
       name: "English",
@@ -191,7 +196,14 @@ window.EntryMemo.UI = (function () {
       favoriteAdded: "Added to favorites.",
       favoriteRemoved: "Removed from favorites.",
       entryEditSuccessMove: "Relocated entry to \"${category}\" and updated title.",
-      entryEditSuccessTitle: "Entry title updated."
+      entryEditSuccessTitle: "Entry title updated.",
+      summary: "Summary",
+      summaryTextareaPlaceholder: "Please describe the current conclusion, policy, unresolved matters, etc. in the ${summaryTitle}...",
+      viewModeGroup: "By Category ↕",
+      viewModeFlat: "Flat (Newest First) ↕",
+      noEntries: "No entries registered."
+    }
+    }
     }
   };
 
@@ -761,6 +773,9 @@ window.EntryMemo.UI = (function () {
     elements.newEntryModal.style.display = "none";
     if (elements.editEntryModal) {
       elements.editEntryModal.style.display = "none";
+    }
+    if (elements.languageModal) {
+      elements.languageModal.style.display = "none";
     }
     closeHelpPanel();
     closeMarkdownPreviewPanel();
@@ -2107,7 +2122,7 @@ window.EntryMemo.UI = (function () {
     const allLink = document.createElement("a");
     allLink.href = "#";
     allLink.className = "breadcrumb-category-link";
-    allLink.textContent = "すべて";
+    allLink.textContent = t("all", "すべて");
     allLink.addEventListener("click", (e) => {
       e.preventDefault();
       window.EntryMemo.App.showAllEntriesListView();
@@ -2122,7 +2137,7 @@ window.EntryMemo.UI = (function () {
       const categoryLink = document.createElement("a");
       categoryLink.href = "#";
       categoryLink.className = "breadcrumb-category-link";
-      categoryLink.textContent = entryData.categoryName;
+      categoryLink.textContent = t(entryData.categoryName);
       categoryLink.addEventListener("click", (e) => {
         e.preventDefault();
         window.EntryMemo.App.handleSelectCategory(entryData.categoryName);
@@ -2143,7 +2158,7 @@ window.EntryMemo.UI = (function () {
     }
 
     // 概要の表示
-    const summaryTitle = entryData.summaryTitle || "概要";
+    const summaryTitle = entryData.summaryTitle || t("summary", "概要");
     if (elements.summarySection) {
       const summaryHeader = elements.summarySection.querySelector("h3");
       if (summaryHeader) {
@@ -2151,17 +2166,17 @@ window.EntryMemo.UI = (function () {
       }
     }
     if (elements.summaryEditBtn) {
-      elements.summaryEditBtn.textContent = `${summaryTitle}を編集`;
+      elements.summaryEditBtn.textContent = (currentLanguage === "ja") ? `${summaryTitle}を編集` : `Edit ${summaryTitle}`;
     }
     if (elements.summaryTextarea) {
-      elements.summaryTextarea.placeholder = `現在の結論、方針、未解決事項などを${summaryTitle}に記述してください...`;
+      elements.summaryTextarea.placeholder = t("summaryTextareaPlaceholder", "現在の結論、方針、未解決事項などを${summaryTitle}に記述してください...").replace("${summaryTitle}", summaryTitle);
     }
 
     if (entryData.summary) {
       elements.summaryText.textContent = entryData.summary;
       elements.summaryText.style.display = "block";
     } else {
-      elements.summaryText.textContent = `(${summaryTitle}は設定されていません)`;
+      elements.summaryText.textContent = (currentLanguage === "ja") ? `(${summaryTitle}は設定されていません)` : `(${summaryTitle} is not set)`;
       elements.summaryText.style.display = "block";
     }
     
@@ -2397,20 +2412,20 @@ window.EntryMemo.UI = (function () {
     elements.categoryEntriesView.style.display = "flex";
     
     focusedEntryIndex = -1;
-    elements.categoryViewTitle.textContent = categoryName;
+    elements.categoryViewTitle.textContent = t(categoryName);
     elements.categoryEntriesList.innerHTML = "";
     
     elements.categoryEntriesList.className = "";
     
     // 表示モード切り替えボタンのテキストを現在の設定に応じて更新
     if (elements.toggleEntryListModeBtn) {
-      elements.toggleEntryListModeBtn.textContent = currentEntryListViewMode === "group" ? "カテゴリー別 ↕" : "新着順（一列） ↕";
+      elements.toggleEntryListModeBtn.textContent = currentEntryListViewMode === "group" ? t("viewModeGroup", "カテゴリー別 ↕") : t("viewModeFlat", "新着順（一列） ↕");
     }
 
     if (entries.length === 0) {
       const empty = document.createElement("div");
       empty.className = "blocks-empty";
-      empty.textContent = "登録されたエントリーがありません。";
+      empty.textContent = t("noEntries", "登録されたエントリーがありません。");
       elements.categoryEntriesList.appendChild(empty);
       return;
     }
@@ -2480,7 +2495,7 @@ window.EntryMemo.UI = (function () {
 
         const titleHeader = document.createElement("h4");
         titleHeader.className = "inline-entry-group-title";
-        titleHeader.textContent = category;
+        titleHeader.textContent = t(category);
         groupDiv.appendChild(titleHeader);
 
         const listDiv = document.createElement("div");
