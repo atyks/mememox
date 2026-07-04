@@ -140,50 +140,50 @@
   <!-- モーダル: ブロック追加・編集 -->
   <div id="block-modal" class="modal">
     <div class="modal-header-row">
-      <h3 id="block-modal-title" class="modal-title">ブロックを追加</h3>
+      <h3 id="block-modal-title" class="modal-title" data-i18n="addBlockTitle">ブロックを追加</h3>
       <div class="modal-actions">
-        <button id="block-modal-save-btn" class="btn-primary btn-sm">保存</button>
-        <button id="block-modal-cancel-btn" class="btn-secondary btn-sm">キャンセル</button>
+        <button id="block-modal-save-btn" class="btn-primary btn-sm" data-i18n="save">保存</button>
+        <button id="block-modal-cancel-btn" class="btn-secondary btn-sm" data-i18n="cancel">キャンセル</button>
       </div>
     </div>
     <div class="form-group">
-      <label for="block-input-title">ブロックタイトル（任意）</label>
-      <input type="text" id="block-input-title" placeholder="ブロックのタイトルを入力してください（空欄可）">
+      <label for="block-input-title" data-i18n="blockTitleLabel">ブロックタイトル（任意）</label>
+      <input type="text" id="block-input-title" placeholder="ブロックのタイトルを入力してください（空欄可）" data-i18n="blockTitlePlaceholder">
     </div>
     <div class="form-group">
-      <label for="block-input-body">本文</label>
-      <textarea id="block-input-body" placeholder="Markdown形式で本文を入力してください..."></textarea>
+      <label for="block-input-body" data-i18n="blockBodyLabel">本文</label>
+      <textarea id="block-input-body" placeholder="Markdown形式で本文を入力してください..." data-i18n="blockBodyPlaceholder"></textarea>
     </div>
   </div>
  
   <!-- モーダル: ブロックの移動 -->
   <div id="move-modal" class="modal">
     <div class="modal-header-row">
-      <h3 class="modal-title">ブロックの移動</h3>
+      <h3 class="modal-title" data-i18n="moveBlockTitle">ブロックの移動</h3>
       <div class="modal-actions">
-        <button id="move-modal-submit-btn" class="btn-primary btn-sm">移動する</button>
-        <button id="move-modal-cancel-btn" class="btn-secondary btn-sm">キャンセル</button>
+        <button id="move-modal-submit-btn" class="btn-primary btn-sm" data-i18n="move">移動する</button>
+        <button id="move-modal-cancel-btn" class="btn-secondary btn-sm" data-i18n="cancel">キャンセル</button>
       </div>
     </div>
-    <p class="modal-desc">以下のブロックを別のエントリーに移動します。</p>
+    <p class="modal-desc" data-i18n="moveBlockDesc">以下のブロックを別のエントリーに移動します。</p>
     <div id="move-source-info" class="source-info-box"></div>
     
     <div class="form-group checkbox-group">
       <label>
-        <input type="checkbox" id="move-new-entry-option"> ＋ 新しいエントリーを作って移動する
+        <input type="checkbox" id="move-new-entry-option"> <span data-i18n="moveNewEntryOption">＋ 新しいエントリーを作って移動する</span>
       </label>
     </div>
  
     <!-- 既存エントリーへの移動フォーム -->
     <div id="move-existing-entry-form">
       <div class="form-group">
-        <label for="move-target-category">移動先のカテゴリー</label>
+        <label for="move-target-category" data-i18n="editEntryCategorySelectLabel">移動先のカテゴリー</label>
         <select id="move-target-category">
           <!-- JSで動的に追加 -->
         </select>
       </div>
       <div class="form-group">
-        <label for="move-target-entry">移動先のエントリー</label>
+        <label for="move-target-entry" data-i18n="moveBlockTargetLabel">移動先のエントリー</label>
         <select id="move-target-entry">
           <!-- JSで動的に追加 -->
         </select>
@@ -193,14 +193,14 @@
     <!-- 新規エントリーへの移動フォーム（初期は非表示） -->
     <div id="move-new-entry-form" style="display: none;">
       <div class="form-group">
-        <label for="move-new-entry-category">作成先のカテゴリー</label>
+        <label for="move-new-entry-category" data-i18n="editEntryCategorySelectLabel">作成先のカテゴリー</label>
         <select id="move-new-entry-category">
           <!-- JSで動的に追加 -->
         </select>
       </div>
       <div class="form-group">
-        <label for="move-new-entry-name">新しいエントリー名</label>
-        <input type="text" id="move-new-entry-name" placeholder="エントリーのタイトルを入力してください">
+        <label for="move-new-entry-name" data-i18n="editEntryNewCategoryLabel">新しいエントリー名</label>
+        <input type="text" id="move-new-entry-name" placeholder="エントリーのタイトルを入力してください" data-i18n="newEntryTitlePlaceholder">
       </div>
     </div>
   </div>
@@ -208,27 +208,27 @@
   <!-- モーダル: 新規エントリー作成 -->
   <div id="new-entry-modal" class="modal">
     <div class="modal-header-row">
-      <h3 class="modal-title">新規エントリー作成</h3>
+      <h3 class="modal-title" data-i18n="newEntryTitle">新規エントリー作成</h3>
       <div class="modal-actions">
-        <button id="new-entry-create-btn" class="btn-primary btn-sm">作成</button>
-        <button id="new-entry-cancel-btn" class="btn-secondary btn-sm">キャンセル</button>
+        <button id="new-entry-create-btn" class="btn-primary btn-sm" data-i18n="save">作成</button>
+        <button id="new-entry-cancel-btn" class="btn-secondary btn-sm" data-i18n="cancel">キャンセル</button>
       </div>
     </div>
     <div class="form-group">
-      <label for="new-entry-name-input">エントリー名</label>
-      <input type="text" id="new-entry-name-input" placeholder="エントリーのタイトルを入力してください">
+      <label for="new-entry-name-input" data-i18n="newEntryTitleLabel">エントリー名</label>
+      <input type="text" id="new-entry-name-input" placeholder="エントリーのタイトルを入力してください" data-i18n="newEntryTitlePlaceholder">
     </div>
  
     <div class="form-group checkbox-group">
       <label>
-        <input type="checkbox" id="new-entry-new-category-option"> ＋ 新しいカテゴリーを作って作成する
+        <input type="checkbox" id="new-entry-new-category-option"> <span data-i18n="newEntryNewCategoryOption">＋ 新しいカテゴリーを作って作成する</span>
       </label>
     </div>
  
     <!-- 既存のカテゴリーへ作成 -->
     <div id="new-entry-existing-category-form">
       <div class="form-group">
-        <label for="new-entry-category-select">作成先のカテゴリー</label>
+        <label for="new-entry-category-select" data-i18n="editEntryCategorySelectLabel">作成先のカテゴリー</label>
         <select id="new-entry-category-select">
           <!-- JSで動的に追加 -->
         </select>
@@ -238,8 +238,8 @@
     <!-- 新しいカテゴリーへ作成 -->
     <div id="new-entry-new-category-form" style="display: none;">
       <div class="form-group">
-        <label for="new-entry-new-category-input">新しいカテゴリー名</label>
-        <input type="text" id="new-entry-new-category-input" placeholder="新しいカテゴリーの名前を入力してください">
+        <label for="new-entry-new-category-input" data-i18n="editEntryNewCategoryLabel">新しいカテゴリー名</label>
+        <input type="text" id="new-entry-new-category-input" placeholder="新しいカテゴリーの名前を入力してください" data-i18n="editEntryNewCategoryPlaceholder">
       </div>
     </div>
   </div>
@@ -247,27 +247,27 @@
   <!-- モーダル: エントリーの編集 -->
   <div id="edit-entry-modal" class="modal">
     <div class="modal-header-row">
-      <h3 class="modal-title">エントリーの編集</h3>
+      <h3 class="modal-title" data-i18n="editEntryTitle">エントリーの編集</h3>
       <div class="modal-actions">
-        <button id="edit-entry-save-btn" class="btn-primary btn-sm">保存</button>
-        <button id="edit-entry-cancel-btn" class="btn-secondary btn-sm">キャンセル</button>
+        <button id="edit-entry-save-btn" class="btn-primary btn-sm" data-i18n="save">保存</button>
+        <button id="edit-entry-cancel-btn" class="btn-secondary btn-sm" data-i18n="cancel">キャンセル</button>
       </div>
     </div>
     <div class="form-group">
-      <label for="edit-entry-name-input">エントリータイトル</label>
-      <input type="text" id="edit-entry-name-input" placeholder="エントリーのタイトルを入力してください">
+      <label for="edit-entry-name-input" data-i18n="editEntryTitleLabel">エントリータイトル</label>
+      <input type="text" id="edit-entry-name-input" placeholder="エントリーのタイトルを入力してください" data-i18n="editEntryTitlePlaceholder">
     </div>
     
     <div class="form-group checkbox-group">
       <label>
-        <input type="checkbox" id="edit-entry-new-category-option"> ＋ 新しいカテゴリーを作って移動する
+        <input type="checkbox" id="edit-entry-new-category-option"> <span data-i18n="editEntryNewCategoryOption">＋ 新しいカテゴリーを作って移動する</span>
       </label>
     </div>
  
     <!-- 既存のカテゴリーへ移動 -->
     <div id="edit-entry-existing-category-form">
       <div class="form-group">
-        <label for="edit-entry-category-select">移動先のカテゴリー</label>
+        <label for="edit-entry-category-select" data-i18n="editEntryCategorySelectLabel">移動先のカテゴリー</label>
         <select id="edit-entry-category-select">
           <!-- JSで動的に追加 -->
         </select>
@@ -277,8 +277,8 @@
     <!-- 新しいカテゴリーへ移動 -->
     <div id="edit-entry-new-category-form" style="display: none;">
       <div class="form-group">
-        <label for="edit-entry-new-category-input">新しいカテゴリー名</label>
-        <input type="text" id="edit-entry-new-category-input" placeholder="新しいカテゴリーの名前を入力してください">
+        <label for="edit-entry-new-category-input" data-i18n="editEntryNewCategoryLabel">新しいカテゴリー名</label>
+        <input type="text" id="edit-entry-new-category-input" placeholder="新しいカテゴリーの名前を入力してください" data-i18n="editEntryNewCategoryPlaceholder">
       </div>
     </div>
   </div>
@@ -303,47 +303,47 @@
   <!-- ショートカットヘルプパネル（右からスライド） -->
   <div id="shortcut-help-panel" class="help-panel">
     <div class="help-panel-header">
-      <h3>⌨️ キーボードショートカット</h3>
+      <h3 data-i18n="helpTitle">⌨️ キーボードショートカット</h3>
       <button id="close-help-btn" class="help-panel-close-btn">&times;</button>
     </div>
     <div class="help-panel-body">
       <div class="help-section">
-        <h4>ナビゲーション</h4>
-        <div class="help-item"><span data-key-action="help"><span class="key">?</span></span> ヘルプパネルの開閉</div>
-        <div class="help-item"><span data-key-action="toggleSidebar"><span class="key">Ctrl</span> + <span class="key">\</span></span> サイドバーの表示/非表示</div>
-        <div class="help-item"><span data-key-action="navigateEntryNext"><span class="key">Alt</span> + <span class="key">↑</span></span>/<span data-key-action="navigateEntryPrev"><span class="key">↓</span></span> 前後のエントリーに切り替え</div>
-        <div class="help-item"><span data-key-action="toggleViewBoard"><span class="key">Alt</span> + <span class="key">←</span></span>/<span data-key-action="toggleViewThread"><span class="key">→</span></span> ビューの切り替え</div>
-        <div class="help-item"><span data-key-action="openFolder"><span class="key">Ctrl</span> + <span class="key">O</span></span> メモフォルダを開く</div>
+        <h4 data-i18n="helpSectionNavigation">ナビゲーション</h4>
+        <div class="help-item"><span data-key-action="help"><span class="key">?</span></span> <span data-i18n="helpItemToggleHelp">ヘルプパネルの開閉</span></div>
+        <div class="help-item"><span data-key-action="toggleSidebar"><span class="key">Ctrl</span> + <span class="key">\</span></span> <span data-i18n="helpItemToggleSidebar">サイドバーの表示/非表示</span></div>
+        <div class="help-item"><span data-key-action="navigateEntryNext"><span class="key">Alt</span> + <span class="key">↑</span></span>/<span data-key-action="navigateEntryPrev"><span class="key">↓</span></span> <span data-i18n="helpItemNavigateEntry">前後のエントリーに切り替え</span></div>
+        <div class="help-item"><span data-key-action="toggleViewBoard"><span class="key">Alt</span> + <span class="key">←</span></span>/<span data-key-action="toggleViewThread"><span class="key">→</span></span> <span data-i18n="helpItemToggleView">ビューの切り替え</span></div>
+        <div class="help-item"><span data-key-action="openFolder"><span class="key">Ctrl</span> + <span class="key">O</span></span> <span data-i18n="helpItemOpenFolder">メモフォルダを開く</span></div>
       </div>
       <div class="help-section">
-        <h4>基本操作</h4>
-        <div class="help-item"><span data-key-action="newEntry"><span class="key">Ctrl</span> + <span class="key">C</span></span> 新規エントリーの作成</div>
-        <div class="help-item"><span data-key-action="editEntry"><span class="key">Ctrl</span> + <span class="key">E</span></span> エントリーの編集</div>
-        <div class="help-item"><span data-key-action="deleteEntry"><span class="key">Shift</span> + <span class="key">D</span> / <span class="key">Delete</span></span> エントリーの削除 (ゴミ箱へ移動)</div>
-        <div class="help-item"><span data-key-action="cardAddBlock"><span class="key">Ctrl</span> + <span class="key">Enter</span> / <span class="key">A</span></span> ブロック追加ポップアップを開く (Aは非入力時)</div>
-        <div class="help-item"><span data-key-action="editSummary"><span class="key">Ctrl</span> + <span class="key">I</span></span> 概要セクションの編集</div>
-        <div class="help-item"><span data-key-action="showAllEntries"><span class="key">Ctrl</span> + <span class="key">H</span></span> カテゴリーのエントリー一覧を表示</div>
-        <div class="help-item"><span data-key-action="navigateCategoryNextCtrl"><span class="key">Ctrl</span> + <span class="key">J</span></span> / <span data-key-action="navigateCategoryPrevCtrl"><span class="key">K</span></span> カテゴリーの切り替え / エントリー一覧へ</div>
+        <h4 data-i18n="helpSectionBasic">基本操作</h4>
+        <div class="help-item"><span data-key-action="newEntry"><span class="key">Ctrl</span> + <span class="key">C</span></span> <span data-i18n="helpItemNewEntry">新規エントリーの作成</span></div>
+        <div class="help-item"><span data-key-action="editEntry"><span class="key">Ctrl</span> + <span class="key">E</span></span> <span data-i18n="helpItemEditEntry">エントリーの編集</span></div>
+        <div class="help-item"><span data-key-action="deleteEntry"><span class="key">Shift</span> + <span class="key">D</span> / <span class="key">Delete</span></span> <span data-i18n="helpItemDeleteEntry">エントリーの削除 (ゴミ箱へ移動)</span></div>
+        <div class="help-item"><span data-key-action="cardAddBlock"><span class="key">Ctrl</span> + <span class="key">Enter</span> / <span class="key">A</span></span> <span data-i18n="helpItemAddBlock">ブロック追加ポップアップを開く (Aは非入力時)</span></div>
+        <div class="help-item"><span data-key-action="editSummary"><span class="key">Ctrl</span> + <span class="key">I</span></span> <span data-i18n="helpItemEditSummary">概要セクションの編集</span></div>
+        <div class="help-item"><span data-key-action="showAllEntries"><span class="key">Ctrl</span> + <span class="key">H</span></span> <span data-i18n="helpItemShowAll">カテゴリーのエントリー一覧を表示</span></div>
+        <div class="help-item"><span data-key-action="navigateCategoryNextCtrl"><span class="key">Ctrl</span> + <span class="key">J</span></span> / <span data-key-action="navigateCategoryPrevCtrl"><span class="key">K</span></span> <span data-i18n="helpItemNavigateCategory">カテゴリーの切り替え / エントリー一覧へ</span></div>
       </div>
       <div class="help-section">
-        <h4>カテゴリーのエントリー一覧画面時</h4>
-        <div class="help-item"><span data-key-action="categoryNavigateNext"><span class="key">J</span></span> / <span data-key-action="categoryNavigatePrev"><span class="key">K</span></span> 次 / 前のエントリーを選択</div>
-        <div class="help-item"><span data-key-action="categoryOpenEntry"><span class="key">Enter</span></span> 選択中のエントリーを開く</div>
-        <div class="help-item"><span data-key-action="navigateCategoryNextCtrl"><span class="key">Ctrl</span> + <span class="key">J</span></span> / <span data-key-action="navigateCategoryPrevCtrl"><span class="key">K</span></span> 前後のカテゴリーのエントリー一覧に移動</div>
+        <h4 data-i18n="helpSectionCategory">カテゴリーのエントリー一覧画面時</h4>
+        <div class="help-item"><span data-key-action="categoryNavigateNext"><span class="key">J</span></span> / <span data-key-action="categoryNavigatePrev"><span class="key">K</span></span> <span data-i18n="helpItemCategorySelect">次 / 前のエントリーを選択</span></div>
+        <div class="help-item"><span data-key-action="categoryOpenEntry"><span class="key">Enter</span></span> <span data-i18n="helpItemCategoryOpen">選択中のエントリーを開く</span></div>
+        <div class="help-item"><span data-key-action="navigateCategoryNextCtrl"><span class="key">Ctrl</span> + <span class="key">J</span></span> / <span data-key-action="navigateCategoryPrevCtrl"><span class="key">K</span></span> <span data-i18n="helpItemCategorySwitch">前後のカテゴリーのエントリー一覧に移動</span></div>
       </div>
       <div class="help-section">
-        <h4>概要・ブロックカード選択時（J/Kで移動）</h4>
-        <div class="help-item"><span data-key-action="cardNavigateNext"><span class="key">J</span></span> / <span data-key-action="cardNavigatePrev"><span class="key">K</span></span> 次 / 前の項目（概要・ブロック）を選択</div>
-        <div class="help-item"><span data-key-action="cardToggleExpand"><span class="key">Space</span></span> 選択中のカードの開閉</div>
-        <div class="help-item"><span data-key-action="cardEdit"><span class="key">Enter</span> / <span class="key">E</span></span> 選択中の項目（概要・ブロック）を編集</div>
-        <div class="help-item"><span data-key-action="cardMoveOrMerge"><span class="key">M</span></span> 選択中のカードを移動 / マージを実行</div>
-        <div class="help-item"><span data-key-action="cardDelete"><span class="key">D</span></span> 選択中のカードを削除</div>
-        <div class="help-item"><span data-key-action="cardSelectMerge"><span class="key">X</span></span> マージ対象として選択 / 解除</div>
+        <h4 data-i18n="helpSectionCard">概要・ブロックカード選択時（J/Kで移動）</h4>
+        <div class="help-item"><span data-key-action="cardNavigateNext"><span class="key">J</span></span> / <span data-key-action="cardNavigatePrev"><span class="key">K</span></span> <span data-i18n="helpItemCardSelect">次 / 前の項目（概要・ブロック）を選択</span></div>
+        <div class="help-item"><span data-key-action="cardToggleExpand"><span class="key">Space</span></span> <span data-i18n="helpItemCardToggle">選択中のカードの開閉</span></div>
+        <div class="help-item"><span data-key-action="cardEdit"><span class="key">Enter</span> / <span class="key">E</span></span> <span data-i18n="helpItemCardEdit">選択中の項目（概要・ブロック）を編集</span></div>
+        <div class="help-item"><span data-key-action="cardMoveOrMerge"><span class="key">M</span></span> <span data-i18n="helpItemCardMove">選択中のカードを移動 / マージを実行</span></div>
+        <div class="help-item"><span data-key-action="cardDelete"><span class="key">D</span></span> <span data-i18n="helpItemCardDelete">選択中のカードを削除</span></div>
+        <div class="help-item"><span data-key-action="cardSelectMerge"><span class="key">X</span></span> <span data-i18n="helpItemCardSelectMerge">マージ対象として選択 / 解除</span></div>
       </div>
       <div class="help-section">
-        <h4>ポップアップ（モーダル）内</h4>
-        <div class="help-item"><span class="key">Ctrl</span> + <span class="key">Enter</span> 保存して閉じる</div>
-        <div class="help-item"><span class="key">Esc</span> 保存せずに閉じる</div>
+        <h4 data-i18n="helpSectionModal">ポップアップ（モーダル）内</h4>
+        <div class="help-item"><span class="key">Ctrl</span> + <span class="key">Enter</span> <span data-i18n="helpItemModalSave">保存して閉じる</span></div>
+        <div class="help-item"><span class="key">Esc</span> <span data-i18n="helpItemModalCancel">保存せずに閉じる</span></div>
       </div>
     </div>
   </div>
@@ -352,9 +352,9 @@
   <!-- Markdownプレビューパネル（右からスライド） -->
   <div id="markdown-preview-panel" class="help-panel">
     <div class="help-panel-header">
-      <h3>📄 Markdownプレビュー</h3>
+      <h3 data-i18n="markdownPreviewTitle">📄 Markdownプレビュー</h3>
       <div style="display: flex; align-items: center;">
-        <button id="markdown-copy-btn" class="btn-primary btn-sm" style="margin-right: 8px;">コピー</button>
+        <button id="markdown-copy-btn" class="btn-primary btn-sm" style="margin-right: 8px;" data-i18n="copy">コピー</button>
         <button id="markdown-preview-close-btn" class="help-panel-close-btn">&times;</button>
       </div>
     </div>
@@ -382,7 +382,7 @@
   <!-- ローディングオーバーレイ -->
   <div id="loading-overlay" class="loading-overlay" style="display: none;">
     <div class="loading-spinner"></div>
-    <div class="loading-text">保存中...</div>
+    <div class="loading-text" data-i18n="loadingText">保存中...</div>
   </div>
 </body>
 </html>

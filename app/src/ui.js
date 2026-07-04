@@ -117,7 +117,56 @@ window.EntryMemo.UI = (function () {
       summaryTextareaPlaceholder: "現在の結論、方針、未解決事項などを${summaryTitle}に記述してください...",
       viewModeGroup: "カテゴリー別 ↕",
       viewModeFlat: "新着順（一列） ↕",
-      noEntries: "登録されたエントリーがありません。"
+      noEntries: "登録されたエントリーがありません。",
+
+      // HTML追加翻訳キー (ja)
+      allEntries: "すべてのエントリー",
+      newEntryTitle: "新規エントリー作成",
+      newEntryTitleLabel: "エントリー名",
+      newEntryTitlePlaceholder: "エントリーのタイトルを入力してください",
+      newEntryNewCategoryOption: "＋ 新しいカテゴリーを作って作成する",
+      editEntryCategorySelectLabel: "移動先のカテゴリー",
+      editEntryNewCategoryLabel: "新しいカテゴリー名",
+      editEntryNewCategoryPlaceholder: "新しいカテゴリーの名前を入力してください",
+      editEntryTitle: "エントリーの編集",
+      editEntryTitleLabel: "エントリータイトル",
+      editEntryTitlePlaceholder: "エントリーのタイトルを入力してください",
+      editEntryNewCategoryOption: "＋ 新しいカテゴリーを作って移動する",
+      move: "移動する",
+      moveBlockDesc: "以下のブロックを別のエントリーに移動します。",
+      moveNewEntryOption: "＋ 新しいエントリーを作って移動する",
+      helpTitle: "⌨️ キーボードショートカット",
+      helpSectionNavigation: "ナビゲーション",
+      helpSectionBasic: "基本操作",
+      helpSectionCategory: "カテゴリーのエントリー一覧画面時",
+      helpSectionCard: "概要・ブロックカード選択時（J/Kで移動）",
+      helpSectionModal: "ポップアップ（モーダル）内",
+      helpItemToggleHelp: "ヘルプパネルの開閉",
+      helpItemToggleSidebar: "サイドバーの表示/非表示",
+      helpItemNavigateEntry: "前後のエントリーに切り替え",
+      helpItemToggleView: "ビューの切り替え",
+      helpItemOpenFolder: "メモフォルダを開く",
+      helpItemNewEntry: "新規エントリーの作成",
+      helpItemEditEntry: "エントリーの編集",
+      helpItemDeleteEntry: "エントリーの削除 (ゴミ箱へ移動)",
+      helpItemAddBlock: "ブロック追加ポップアップを開く (Aは非入力時)",
+      helpItemEditSummary: "概要セクションの編集",
+      helpItemShowAll: "カテゴリーのエントリー一覧を表示",
+      helpItemNavigateCategory: "カテゴリーの切り替え / エントリー一覧へ",
+      helpItemCategorySelect: "次 / 前のエントリーを選択",
+      helpItemCategoryOpen: "選択中のエントリーを開く",
+      helpItemCategorySwitch: "前後のカテゴリーのエントリー一覧に移動",
+      helpItemCardSelect: "次 / 前の項目（概要・ブロック）を選択",
+      helpItemCardToggle: "選択中のカードの開閉",
+      helpItemCardEdit: "選択中の項目（概要・ブロック）を編集",
+      helpItemCardMove: "選択中のカードを移動 / マージを実行",
+      helpItemCardDelete: "選択中のカードを削除",
+      helpItemCardSelectMerge: "マージ対象として選択 / 解除",
+      helpItemModalSave: "保存して閉じる",
+      helpItemModalCancel: "保存せずに閉じる",
+      markdownPreviewTitle: "📄 Markdownプレビュー",
+      copy: "コピー",
+      loadingText: "保存中..."
     },
     en: {
       name: "English",
@@ -201,7 +250,57 @@ window.EntryMemo.UI = (function () {
       summaryTextareaPlaceholder: "Please describe the current conclusion, policy, unresolved matters, etc. in the ${summaryTitle}...",
       viewModeGroup: "By Category ↕",
       viewModeFlat: "Flat (Newest First) ↕",
-      noEntries: "No entries registered."
+      noEntries: "No entries registered.",
+
+      // HTML追加翻訳キー (en)
+      allEntries: "All Entries",
+      newEntryTitle: "Create New Entry",
+      newEntryTitleLabel: "Entry Name",
+      newEntryTitlePlaceholder: "Enter entry title...",
+      newEntryNewCategoryOption: "+ Create a new category and create",
+      editEntryCategorySelectLabel: "Move to Category",
+      editEntryNewCategoryLabel: "New Category Name",
+      editEntryNewCategoryPlaceholder: "Enter new category name...",
+      editEntryTitle: "Edit Entry",
+      editEntryTitleLabel: "Entry Title",
+      editEntryTitlePlaceholder: "Enter entry title...",
+      editEntryNewCategoryOption: "+ Create a new category and move",
+      move: "Move",
+      moveBlockDesc: "Move the following block to another entry.",
+      moveNewEntryOption: "+ Create a new entry and move",
+      helpTitle: "⌨️ Keyboard Shortcuts",
+      helpSectionNavigation: "Navigation",
+      helpSectionBasic: "Basic Operations",
+      helpSectionCategory: "On Category Entries List View",
+      helpSectionCard: "On Card Selected (J/K to Navigate)",
+      helpSectionModal: "In Dialog (Modal)",
+      helpItemToggleHelp: "Toggle Help Panel",
+      helpItemToggleSidebar: "Toggle Sidebar",
+      helpItemNavigateEntry: "Navigate Entries",
+      helpItemToggleView: "Toggle View Mode",
+      helpItemOpenFolder: "Open Memo Directory",
+      helpItemNewEntry: "Create New Entry",
+      helpItemEditEntry: "Edit Entry",
+      helpItemDeleteEntry: "Delete Entry (Move to Trash)",
+      helpItemAddBlock: "Open Add Block Dialog (A key when idle)",
+      helpItemEditSummary: "Edit Summary Section",
+      helpItemShowAll: "Show Category Entries List",
+      helpItemNavigateCategory: "Navigate Categories / List",
+      helpItemCategorySelect: "Select Next/Prev Entry",
+      helpItemCategoryOpen: "Open Selected Entry",
+      helpItemCategorySwitch: "Switch Category List",
+      helpItemCardSelect: "Select Next/Prev Item",
+      helpItemCardToggle: "Toggle Expand/Collapse",
+      helpItemCardEdit: "Edit Selected Item",
+      helpItemCardMove: "Move Card / Execute Merge",
+      helpItemCardDelete: "Delete Selected Card",
+      helpItemCardSelectMerge: "Select/Deselect for Merge",
+      helpItemModalSave: "Save and Close",
+      helpItemModalCancel: "Close Without Saving",
+      markdownPreviewTitle: "📄 Markdown Preview",
+      copy: "Copy",
+      loadingText: "Saving..."
+    }
     }
   };
 
@@ -398,7 +497,18 @@ window.EntryMemo.UI = (function () {
   function t(key, fallback = "") {
     const lang = currentLanguage;
     const dict = activeTranslations[lang] || activeTranslations["ja"];
-    return dict[key] || fallback || key;
+    
+    // カテゴリー名などの日本語文字列を英語辞書のキーにマッピングするエイリアス処理
+    let searchKey = key;
+    if (lang !== "ja") {
+      if (key === "すべてのエントリー") searchKey = "allEntries";
+      else if (key === "ゴミ箱") searchKey = "trash";
+      else if (key === "インボックス") searchKey = "inbox";
+      else if (key === "思考") searchKey = "thinking";
+      else if (key === "作業") searchKey = "work";
+    }
+    
+    return dict[searchKey] || fallback || key;
   }
 
   function updateLanguageUI() {
