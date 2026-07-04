@@ -799,6 +799,9 @@ button, .btn {
   justify-content: center;
   z-index: 999;
   border: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 #add-entry-btn-fab:hover {
@@ -924,6 +927,9 @@ button, .btn {
     justify-content: center;
     z-index: 999;
     border: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
   }
 
   #add-block-btn-top:hover {
