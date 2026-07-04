@@ -166,7 +166,20 @@ window.EntryMemo.UI = (function () {
       helpItemModalCancel: "保存せずに閉じる",
       markdownPreviewTitle: "📄 Markdownプレビュー",
       copy: "コピー",
-      loadingText: "保存中..."
+      loadingText: "保存中...",
+      
+      // 追加のUIテキスト (ja)
+      addBlockBtn: "ブロックを追加",
+      online: "オンライン",
+      openLocalFolder: "ローカルフォルダを開く",
+      local: "ローカル",
+      openOtherFolder: "別のフォルダを開く",
+      sortAsc: "昇順 ↕",
+      sortDesc: "降順 ↕",
+      noBlocks: "ブロックはありません。",
+      mergeCountText: "${count} 件のブロックを選択中",
+      blocks: "📝 ブロック",
+      sortBlocksTitle: "ブロックの並び順（昇順/降順）"
     },
     en: {
       name: "English",
@@ -299,7 +312,20 @@ window.EntryMemo.UI = (function () {
       helpItemModalCancel: "Close Without Saving",
       markdownPreviewTitle: "📄 Markdown Preview",
       copy: "Copy",
-      loadingText: "Saving..."
+      loadingText: "Saving...",
+      
+      // 追加のUIテキスト (en)
+      addBlockBtn: "Add Block",
+      online: "Online",
+      openLocalFolder: "Open Local Folder",
+      local: "Local",
+      openOtherFolder: "Open Another Folder",
+      sortAsc: "Ascending ↕",
+      sortDesc: "Descending ↕",
+      noBlocks: "No blocks available.",
+      mergeCountText: "${count} block(s) selected",
+      blocks: "📝 Blocks",
+      sortBlocksTitle: "Block sort order (Ascending/Descending)"
     }
   };
 
@@ -2307,7 +2333,7 @@ window.EntryMemo.UI = (function () {
     if (!blocks || blocks.length === 0) {
       const emptyDiv = document.createElement("div");
       emptyDiv.className = "blocks-empty";
-      emptyDiv.textContent = "ブロックはありません。";
+      emptyDiv.textContent = t("noBlocks", "ブロックはありません。");
       elements.blocksList.appendChild(emptyDiv);
       return;
     }
@@ -2488,24 +2514,24 @@ window.EntryMemo.UI = (function () {
    */
   function updateModeIndicator(isDemo, folderName = "", type = "local") {
     if (isDemo) {
-      elements.currentModeBadge.textContent = "デモモード";
+      elements.currentModeBadge.textContent = t("demoMode", "デモモード");
       elements.currentModeBadge.className = "badge-demo";
       elements.openFolderBtn.style.display = "block";
       elements.openFolderBtn.textContent = "📁";
-      elements.openFolderBtn.title = "フォルダを開く";
+      elements.openFolderBtn.title = t("openFolder", "フォルダを開く");
     } else {
       if (type === "server") {
-        elements.currentModeBadge.textContent = "オンライン";
+        elements.currentModeBadge.textContent = t("online", "オンライン");
         elements.currentModeBadge.className = "badge-server";
         elements.openFolderBtn.style.display = "block";
         elements.openFolderBtn.textContent = "📁";
-        elements.openFolderBtn.title = "ローカルフォルダを開く";
+        elements.openFolderBtn.title = t("openLocalFolder", "ローカルフォルダを開く");
       } else {
-        elements.currentModeBadge.textContent = `ローカル: ${folderName}`;
+        elements.currentModeBadge.textContent = `${t("local", "ローカル")}: ${folderName}`;
         elements.currentModeBadge.className = "badge-local";
         elements.openFolderBtn.style.display = "block";
         elements.openFolderBtn.textContent = "📁";
-        elements.openFolderBtn.title = "別のフォルダを開く";
+        elements.openFolderBtn.title = t("openOtherFolder", "別のフォルダを開く");
       }
     }
   }
@@ -2675,7 +2701,7 @@ window.EntryMemo.UI = (function () {
 
   function updateSortBlocksBtnText() {
     if (elements.sortBlocksBtn) {
-      elements.sortBlocksBtn.textContent = currentSortOrder === "asc" ? "昇順 ↕" : "降順 ↕";
+      elements.sortBlocksBtn.textContent = currentSortOrder === "asc" ? t("sortAsc", "昇順 ↕") : t("sortDesc", "降順 ↕");
     }
   }
 
@@ -2684,7 +2710,7 @@ window.EntryMemo.UI = (function () {
     const count = checkedBoxes.length;
     
     if (count > 0) {
-      elements.mergeCountText.textContent = `${count} 件のブロックを選択中`;
+      elements.mergeCountText.textContent = t("mergeCountText", "${count} 件のブロックを選択中").replace("${count}", count);
       elements.mergeActionBar.style.display = "flex";
     } else {
       elements.mergeActionBar.style.display = "none";
