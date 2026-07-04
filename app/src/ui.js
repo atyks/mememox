@@ -1757,7 +1757,7 @@ window.EntryMemo.UI = (function () {
 
       if (e.ctrlKey || e.metaKey) {
         // 残りのCtrlキー、または互換性のあるマッピングの処理
-        if (match(e, "addBlock")) {
+        if (match(e, "cardAddBlock")) {
           if (!isModalOpen && !isSummaryEditing) {
             if (elements.entryDetailView.style.display === "flex") {
               e.preventDefault();
