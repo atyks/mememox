@@ -498,10 +498,12 @@ window.EntryMemo.App = (function () {
       await loadInitialEntry();
 
     } catch (e) {
-      console.warn(e);
-      if (e.name !== "AbortError") {
-        UI.showToast(`フォルダを開けませんでした: ${e.message}`, "error");
+      if (e.name === "AbortError") {
+        // ユーザーがキャンセルした場合は何もしない
+        return;
       }
+      console.error("Failed to open folder:", e);
+      UI.showToast(`フォルダを開けませんでした: ${e.message}`, "error");
     }
   }
 
