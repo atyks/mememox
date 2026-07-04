@@ -42,13 +42,34 @@ window.EntryMemo.App = (function () {
     }
   }
 
+  // 共通お気に入りメソッド注入ヘルパー
+  function injectFavoritesMethods(storage) {
+    if (!storage.favorites) {
+      storage.favorites = new Set();
+    }
+    if (typeof storage.isFavorite !== "function") {
+      storage.isFavorite = function (categoryName, fileName) {
+        return this.favorites.has(`${categoryName}/${fileName}`);
+      };
+    }
+    if (typeof storage.toggleFavorite !== "function") {
+      storage.toggleFavorite = async function (categoryName, fileName) {
+        const key = `${categoryName}/${fileName}`;
+        if (this.favorites.has(key)) {
+          this.favorites.delete(key);
+        } else {
+          this.favorites.add(key);
+        }
+        return this.favorites.has(key);
+      };
+    }
+  }
+
   /**
    * アプリ起動時の初期化
    */
   async function init() {
     UI.init();
-    
-    loadFavorites();
     
     const isServerMode = window.location.protocol.startsWith("http");
  
@@ -70,6 +91,9 @@ window.EntryMemo.App = (function () {
       try {
         currentStorage = new Storage.ServerStorage(apiUrl);
         await currentStorage.init();
+        injectFavoritesMethods(currentStorage);
+        favorites = currentStorage.favorites;
+        
         UI.updateModeIndicator(false, "サーバーモード", "server");
         
         // サーバーモード時でもFile System Access API非対応であればローカルフォルダボタンを無効化
@@ -83,11 +107,17 @@ window.EntryMemo.App = (function () {
       } catch (e) {
         UI.showToast(`接続エラー: ${e.message}`, "error");
         currentStorage = new Storage.DemoStorage();
+        injectFavoritesMethods(currentStorage);
+        loadFavorites();
+        currentStorage.favorites = favorites;
         UI.updateModeIndicator(true);
       }
     } else {
       // 最初はデモモードで起動する
       currentStorage = new Storage.DemoStorage();
+      injectFavoritesMethods(currentStorage);
+      loadFavorites();
+      currentStorage.favorites = favorites;
       UI.updateModeIndicator(true);
  
       // File System Access APIの非対応ブラウザチェック
@@ -173,6 +203,7 @@ window.EntryMemo.App = (function () {
     localStorage.setItem("EntryMemo.lastActiveListViewCategory", "すべてのエントリー");
     localStorage.removeItem("EntryMemo.lastActiveEntryFileName");
 
+    UI.showLoading("エントリー一覧を読み込み中...");
     try {
       const allEntries = [];
       if (!currentStorage) return;
@@ -228,6 +259,8 @@ window.EntryMemo.App = (function () {
     } catch (e) {
       console.error(e);
       UI.showToast(`すべてのエントリー一覧の取得に失敗しました: ${e.message}`, "error");
+    } finally {
+      UI.hideLoading();
     }
   }
 
@@ -250,18 +283,26 @@ window.EntryMemo.App = (function () {
    */
   async function getAllExistingIds() {
     const ids = new Set();
-    const categories = await currentStorage.listCategories();
-    for (const category of categories) {
-      const entries = await currentStorage.listEntries(category);
-      for (const entry of entries) {
+    
+    if (currentStorage.cache && Object.keys(currentStorage.cache).length > 0) {
+      // キャッシュが存在する場合（ServerStorage等）は一瞬でスキャン
+      for (const key in currentStorage.cache) {
         try {
-          const md = await currentStorage.readEntry(category, entry.fileName);
-          const parsed = Markdown.parseEntry(md);
-          parsed.blocks.forEach(r => {
-            if (r.id) ids.add(r.id);
-          });
-        } catch (e) {
-          // エラーのあるファイルはID収集をスキップ
+          const parsed = Markdown.parseEntry(currentStorage.cache[key].content);
+          parsed.blocks.forEach(r => { if (r.id) ids.add(r.id); });
+        } catch(e) {}
+      }
+    } else {
+      // 従来の都度読み込み（FileSystemStorage等）
+      const categories = await currentStorage.listCategories();
+      for (const category of categories) {
+        const entries = await currentStorage.listEntries(category);
+        for (const ent of entries) {
+          try {
+            const md = await currentStorage.readEntry(category, ent.fileName);
+            const parsed = Markdown.parseEntry(md);
+            parsed.blocks.forEach(r => { if (r.id) ids.add(r.id); });
+          } catch(e) {}
         }
       }
     }
@@ -281,6 +322,7 @@ window.EntryMemo.App = (function () {
     localStorage.setItem("EntryMemo.lastActiveEntryCategory", categoryName);
     localStorage.setItem("EntryMemo.lastActiveEntryFileName", fileName);
 
+    UI.showLoading("エントリーを読み込み中...");
     try {
       const md = await currentStorage.readEntry(categoryName, fileName);
       const parsed = Markdown.parseEntry(md);
@@ -290,6 +332,7 @@ window.EntryMemo.App = (function () {
         fileName: fileName,
         title: parsed.title,
         summary: parsed.summary,
+        summaryTitle: parsed.summaryTitle || "概要",
         blocks: parsed.blocks,
         hasError: parsed.errors.length > 0,
         errors: parsed.errors,
@@ -305,6 +348,7 @@ window.EntryMemo.App = (function () {
         fileName: fileName,
         title: fileName,
         summary: "",
+        summaryTitle: "概要",
         blocks: [],
         hasError: true,
         errors: [`ファイルを読み込めませんでした: ${e.message}`]
@@ -312,6 +356,8 @@ window.EntryMemo.App = (function () {
       UI.renderCurrentEntry(activeEntryObj, true);
       document.title = `要修復: ${fileName} - mememox`;
       UI.showToast(`エントリーの読み込みに失敗しました: ${e.message}`, "error");
+    } finally {
+      UI.hideLoading();
     }
   }
 
@@ -431,6 +477,10 @@ window.EntryMemo.App = (function () {
 
       // ストレージをFileSystemStorageに切り替え
       currentStorage = fsStorage;
+      injectFavoritesMethods(currentStorage);
+      const localFavs = localStorage.getItem("EntryMemo.favorites");
+      currentStorage.favorites = new Set(localFavs ? JSON.parse(localFavs) : []);
+      favorites = currentStorage.favorites;
       activeCategory = "";
       activeEntryFileName = "";
       activeEntryObj = null;
@@ -456,7 +506,7 @@ window.EntryMemo.App = (function () {
    * 新規エントリー作成
    */
   async function handleCreateEntry(categoryName, title) {
-    if (isReadOnly() && !currentStorage) return;
+    if (!currentStorage) return false;
 
     try {
       // ファイル名の生成
@@ -472,9 +522,11 @@ window.EntryMemo.App = (function () {
       
       // 作成したエントリーを開く
       await handleSelectEntry(categoryName, actualFileName);
+      return true;
     } catch (e) {
       console.error(e);
       UI.showToast(`エントリーの作成に失敗しました: ${e.message}`, "error");
+      throw e;
     }
   }
 
@@ -491,6 +543,7 @@ window.EntryMemo.App = (function () {
 
     if (!confirm(confirmMessage)) return;
 
+    UI.showLoading("エントリーを削除中...");
     try {
       if (isTrash) {
         await currentStorage.deleteEntry(categoryName, fileName);
@@ -510,6 +563,8 @@ window.EntryMemo.App = (function () {
     } catch (e) {
       console.error(e);
       UI.showToast(`エントリーの削除に失敗しました: ${e.message}`, "error");
+    } finally {
+      UI.hideLoading();
     }
   }
 
@@ -517,7 +572,7 @@ window.EntryMemo.App = (function () {
    * エントリーの編集（タイトル、所属するカテゴリーの変更）
    */
   async function handleEditEntry(categoryName, fileName, newCategoryName, newTitle) {
-    if (isReadOnly() && !currentStorage) return;
+    if (isReadOnly() && !currentStorage) return false;
 
     try {
       // 1. タイトルの変更を適用
@@ -558,19 +613,22 @@ window.EntryMemo.App = (function () {
 
       // 開き直す
       await handleSelectEntry(actualCategoryName, actualFileName);
+      return true;
     } catch (e) {
       console.error(e);
       UI.showToast(`エントリーの編集に失敗しました: ${e.message}`, "error");
+      throw e;
     }
   }
 
   /**
    * 概要の編集保存
    */
-  async function handleSaveSummary(newValue) {
-    if (isReadOnly()) return;
+  async function handleSaveSummary(newTitle, newValue) {
+    if (isReadOnly()) return false;
 
     try {
+      activeEntryObj.summaryTitle = newTitle.trim();
       activeEntryObj.summary = newValue.trim();
       
       // 再シリアライズ
@@ -579,11 +637,13 @@ window.EntryMemo.App = (function () {
       // 書き込み
       await currentStorage.writeEntry(activeEntryObj.categoryName, activeEntryObj.fileName, md);
       
-      UI.showToast("概要を保存しました。", "success");
+      UI.showToast(`${activeEntryObj.summaryTitle}を保存しました。`, "success");
       UI.renderCurrentEntry(activeEntryObj);
+      return true;
     } catch (e) {
       console.error(e);
-      UI.showToast(`概要の保存に失敗しました: ${e.message}`, "error");
+      UI.showToast(`${newTitle.trim() || "概要"}の保存に失敗しました: ${e.message}`, "error");
+      throw e;
     }
   }
 
@@ -593,6 +653,7 @@ window.EntryMemo.App = (function () {
   async function handleCreateBlock(title, body) {
     if (isReadOnly()) return;
 
+    UI.showLoading("ブロックを追加中...");
     try {
       const existingIds = await getAllExistingIds();
       const newBlock = Markdown.createBlock(title, body, existingIds);
@@ -612,6 +673,8 @@ window.EntryMemo.App = (function () {
     } catch (e) {
       console.error(e);
       UI.showToast(`ブロックの追加に失敗しました: ${e.message}`, "error");
+    } finally {
+      UI.hideLoading();
     }
   }
 
@@ -621,6 +684,7 @@ window.EntryMemo.App = (function () {
   async function handleUpdateBlock(blockId, title, body) {
     if (isReadOnly()) return;
 
+    UI.showLoading("ブロックを更新中...");
     try {
       Markdown.updateBlock(activeEntryObj, blockId, title, body);
 
@@ -636,6 +700,8 @@ window.EntryMemo.App = (function () {
     } catch (e) {
       console.error(e);
       UI.showToast(`ブロックの更新に失敗しました: ${e.message}`, "error");
+    } finally {
+      UI.hideLoading();
     }
   }
 
@@ -656,14 +722,15 @@ window.EntryMemo.App = (function () {
       return;
     }
 
+    UI.showLoading("ブロックを移動中...");
     try {
       // 1. 移動先のファイルを読み込み、パース
       const targetMd = await currentStorage.readEntry(targetCategory, targetFileName);
       const targetEntryParsed = Markdown.parseEntry(targetMd);
 
       if (targetEntryParsed.errors.length > 0) {
-        UI.showToast("移動先エントリーにエラーがあるため、移動できません。", "error");
-        return;
+         UI.showToast("移動先エントリーにエラーがあるため、移動できません。", "error");
+         return;
       }
 
       // 移動先の既存ID重複チェック
@@ -708,6 +775,8 @@ window.EntryMemo.App = (function () {
     } catch (e) {
       console.error(e);
       UI.showToast(`ブロックの移動に失敗しました: ${e.message}`, "error");
+    } finally {
+      UI.hideLoading();
     }
   }
 
@@ -723,11 +792,13 @@ window.EntryMemo.App = (function () {
       return;
     }
 
+    UI.showLoading("エントリーを作成中...");
     try {
       // 1. 新規エントリーのMarkdownを作成
       const newEntryObj = {
         title: entryName,
         summary: "",
+        summaryTitle: "概要",
         blocks: [
           {
             id: sourceBlock.id,
@@ -770,6 +841,8 @@ window.EntryMemo.App = (function () {
     } catch (e) {
       console.error(e);
       UI.showToast(`新規エントリー作成および移動に失敗しました: ${e.message}`, "error");
+    } finally {
+      UI.hideLoading();
     }
   }
 
@@ -786,6 +859,7 @@ window.EntryMemo.App = (function () {
     localStorage.setItem("EntryMemo.lastActiveListViewCategory", categoryName);
     localStorage.removeItem("EntryMemo.lastActiveEntryFileName");
 
+    UI.showLoading("カテゴリーのエントリーを読み込み中...");
     try {
       const entries = await currentStorage.listEntries(categoryName);
 
@@ -829,6 +903,8 @@ window.EntryMemo.App = (function () {
     } catch (e) {
       console.error(e);
       UI.showToast(`カテゴリーのエントリー一覧の取得に失敗しました: ${e.message}`, "error");
+    } finally {
+      UI.hideLoading();
     }
   }
 
@@ -842,25 +918,36 @@ window.EntryMemo.App = (function () {
     }
   }
 
-  async function handleToggleFavorite(categoryName, fileName) {
-    const key = `${categoryName}/${fileName}`;
-    let isFav = false;
-    if (favorites.has(key)) {
-      favorites.delete(key);
-    } else {
-      favorites.add(key);
-      isFav = true;
-    }
-    saveFavorites();
+  async function handleToggleFavorite(category, fileName) {
+    try {
+      const isFavNow = await currentStorage.toggleFavorite(category, fileName);
+      
+      // ローカルモードの時のみ localStorage にミラーリング
+      if (currentStorage.constructor.name === "FileSystemStorage") {
+        const list = Array.from(currentStorage.favorites);
+        localStorage.setItem("EntryMemo.favorites", JSON.stringify(list));
+      }
 
-    UI.updateFavoriteButton(isFav);
-
-    if (activeCategory === "すべてのエントリー") {
-      await showAllEntriesListView();
-    } else if (activeCategory === categoryName && !activeEntryFileName) {
-      await handleSelectCategory(categoryName);
+      UI.showToast(isFavNow ? "お気に入り（Pickup）に追加しました。" : "お気に入りから解除しました。", "success");
+      
+      // UIの再描画
+      if (activeCategory === "すべてのエントリー") {
+        await showAllEntriesListView();
+      } else if (activeCategory && !activeEntryFileName) {
+        await handleSelectCategory(activeCategory);
+      } else if (activeCategory && activeEntryFileName) {
+        // 詳細ビュー表示中の更新
+        const entry = await currentStorage.readEntry(activeCategory, activeEntryFileName);
+        const parsed = Markdown.parseEntry(entry);
+        parsed.categoryName = activeCategory;
+        parsed.fileName = activeEntryFileName;
+        parsed.isFavorite = isFavNow;
+        UI.renderCurrentEntry(parsed);
+      }
+    } catch (e) {
+      console.error(e);
+      UI.showToast(`お気に入り設定の変更に失敗しました: ${e.message}`, "error");
     }
-    UI.showToast(isFav ? "お気に入り（Pickup）に追加しました。" : "お気に入り（Pickup）から解除しました。", "success");
   }
 
   function isFavorite(categoryName, fileName) {
@@ -870,6 +957,7 @@ window.EntryMemo.App = (function () {
   async function handleDeleteBlock(blockId) {
     if (isReadOnly()) return;
 
+    UI.showLoading("ブロックを削除中...");
     try {
       activeEntryObj.blocks = activeEntryObj.blocks.filter(r => r.id !== blockId);
       const md = Markdown.serializeEntry(activeEntryObj);
@@ -880,12 +968,15 @@ window.EntryMemo.App = (function () {
     } catch (e) {
       console.error(e);
       UI.showToast(`ブロックの削除に失敗しました: ${e.message}`, "error");
+    } finally {
+      UI.hideLoading();
     }
   }
 
   async function handleDeleteBlocks(blockIds) {
     if (isReadOnly()) return;
 
+    UI.showLoading("選択したブロックを削除中...");
     try {
       activeEntryObj.blocks = activeEntryObj.blocks.filter(r => !blockIds.includes(r.id));
       const md = Markdown.serializeEntry(activeEntryObj);
@@ -896,6 +987,8 @@ window.EntryMemo.App = (function () {
     } catch (e) {
       console.error(e);
       UI.showToast(`ブロックの削除に失敗しました: ${e.message}`, "error");
+    } finally {
+      UI.hideLoading();
     }
   }
 
@@ -909,6 +1002,7 @@ window.EntryMemo.App = (function () {
       return;
     }
 
+    UI.showLoading("ブロックをマージ中...");
     try {
       const allExistingIds = await getAllExistingIds();
       
@@ -931,6 +1025,8 @@ window.EntryMemo.App = (function () {
     } catch (e) {
       console.error(e);
       UI.showToast(`ブロックのマージに失敗しました: ${e.message}`, "error");
+    } finally {
+      UI.hideLoading();
     }
   }
 
@@ -1042,6 +1138,21 @@ window.EntryMemo.App = (function () {
     }
   }
 
+  async function handlePullToRefresh() {
+    if (!currentStorage) return;
+    await currentStorage.init();
+    
+    if (activeCategory === "すべてのエントリー") {
+      await showAllEntriesListView();
+    } else if (activeCategory && !activeEntryFileName) {
+      await handleSelectCategory(activeCategory);
+    } else if (activeCategory && activeEntryFileName) {
+      await handleSelectEntry(activeCategory, activeEntryFileName);
+    } else {
+      await loadInitialEntry();
+    }
+  }
+
   return {
     init,
     isReadOnly,
@@ -1069,6 +1180,7 @@ window.EntryMemo.App = (function () {
     handleMoveBlock,
     handleMoveBlockToNewEntry,
     handleSwipeToggle,
+    handlePullToRefresh,
     storage: {
       listCategories: () => currentStorage.listCategories(),
       listEntries: (b) => currentStorage.listEntries(b),

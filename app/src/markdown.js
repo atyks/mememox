@@ -10,6 +10,7 @@ window.EntryMemo.Markdown = (function () {
     const result = {
       title: "",
       summary: "",
+      summaryTitle: "概要",
       blocks: [],
       errors: []
     };
@@ -45,26 +46,28 @@ window.EntryMemo.Markdown = (function () {
         continue;
       }
 
-      // ## 概要
-      if (line.trim() === "## 概要") {
-        hasSummaryHeader = true;
-        if (state === "TITLE" || state === "START") {
-          state = "SUMMARY";
+      // H2見出しの判定
+      if (line.startsWith("## ")) {
+        const h2Content = line.substring(3).trim();
+        if (h2Content === "ブロック") {
+          hasBlocksHeader = true;
+          if (state === "SUMMARY") {
+            state = "BLOCKS";
+          } else {
+            result.errors.push("## ブロック の位置が不正です（概要セクションより前に出現しています）。");
+          }
+          continue;
         } else {
-          result.errors.push("## 概要 の位置が不正です。");
+          // これが概要見出し（あるいはカスタム概要見出し）
+          hasSummaryHeader = true;
+          result.summaryTitle = h2Content;
+          if (state === "TITLE" || state === "START") {
+            state = "SUMMARY";
+          } else {
+            result.errors.push(`## ${h2Content} の位置が不正です。`);
+          }
+          continue;
         }
-        continue;
-      }
-
-      // ## ブロック
-      if (line.trim() === "## ブロック") {
-        hasBlocksHeader = true;
-        if (state === "SUMMARY") {
-          state = "BLOCKS";
-        } else {
-          result.errors.push("## ブロック の位置が不正です（## 概要 より前に出現しています）。");
-        }
-        continue;
       }
 
       // 各状態に応じた行の割り当て
@@ -154,7 +157,7 @@ window.EntryMemo.Markdown = (function () {
       result.errors.push("H1（エントリータイトル）が存在しません。");
     }
     if (!hasSummaryHeader) {
-      result.errors.push("## 概要 が存在しません。");
+      result.errors.push("概要セクション（H2）が存在しません。");
     }
     if (!hasBlocksHeader) {
       result.errors.push("## ブロック が存在しません。");
@@ -171,7 +174,8 @@ window.EntryMemo.Markdown = (function () {
   function serializeEntry(entryObject) {
     let md = `# ${entryObject.title}\n\n`;
     
-    md += `## 概要\n\n`;
+    const summaryTitle = entryObject.summaryTitle || "概要";
+    md += `## ${summaryTitle}\n\n`;
     if (entryObject.summary) {
       md += `${entryObject.summary}\n\n`;
     } else {
@@ -208,7 +212,8 @@ window.EntryMemo.Markdown = (function () {
       errors.push("H1（エントリータイトル）が存在しません。");
     }
     if (entryObject.summary === undefined) {
-      errors.push("## 概要 が存在しません。");
+      const summaryTitle = entryObject.summaryTitle || "概要";
+      errors.push(`## ${summaryTitle} が存在しません。`);
     }
     if (!Array.isArray(entryObject.blocks)) {
       errors.push("## ブロック が存在しません。");

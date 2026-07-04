@@ -17,6 +17,7 @@
     </div>
     <div class="header-actions">
       <button id="open-folder-btn" class="btn-icon" title="フォルダを開く">📁</button>
+      <button id="header-refresh-btn" class="btn-icon" title="最新の情報に更新">🔄</button>
       <button id="header-help-btn" class="btn-icon" title="操作マニュアルを開く">❓</button>
       <button id="header-home-btn" class="btn-icon" title="ホーム">🏠</button>
       <button id="header-new-entry-btn" class="btn-icon" title="新規エントリー">+</button>
@@ -25,6 +26,10 @@
 
   <!-- メインレイアウトコンテナ -->
   <div id="app-container">
+    <!-- Pull to Refresh インジケーター -->
+    <div id="pull-to-refresh" class="pull-to-refresh-container">
+      <div class="pull-indicator-icon" id="pull-indicator-icon"></div>
+    </div>
 
     <!-- 右カラム: メインコンテンツエリア -->
     <main id="main-content" style="display: none;">
@@ -65,7 +70,14 @@
             
             <!-- 概要: 編集モード -->
             <div id="summary-editor-area" class="summary-editor-box" style="display: none;">
-              <textarea id="summary-textarea" placeholder="現在の結論、方針、未解決事項などを記述してください..."></textarea>
+              <div class="form-group" style="margin-bottom: 8px;">
+                <label for="summary-title-input" style="font-size: 0.85rem; font-weight: bold; margin-bottom: 4px; display: block;">項目タイトル</label>
+                <input type="text" id="summary-title-input" placeholder="項目のタイトルを入力してください（例: 概要）" style="width: 100%; box-sizing: border-box; padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.9rem;">
+              </div>
+              <div class="form-group">
+                <label for="summary-textarea" style="font-size: 0.85rem; font-weight: bold; margin-bottom: 4px; display: block;">本文</label>
+                <textarea id="summary-textarea" placeholder="現在の結論、方針、未解決事項などを記述してください..."></textarea>
+              </div>
               <div class="editor-actions">
                 <button id="summary-save-btn" class="btn-primary btn-sm">保存</button>
                 <button id="summary-cancel-btn" class="btn-secondary btn-sm">キャンセル</button>
@@ -349,5 +361,11 @@
       window.EntryMemo.App.init();
     });
   </script>
+
+  <!-- ローディングオーバーレイ -->
+  <div id="loading-overlay" class="loading-overlay" style="display: none;">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">保存中...</div>
+  </div>
 </body>
 </html>

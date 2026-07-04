@@ -61,6 +61,7 @@ window.EntryMemo.UI = (function () {
       
       // 共通ヘッダーのアクションボタン
       headerHelpBtn: document.getElementById("header-help-btn"),
+      headerRefreshBtn: document.getElementById("header-refresh-btn"),
       headerHomeBtn: document.getElementById("header-home-btn"),
       headerNewEntryBtn: document.getElementById("header-new-entry-btn"),
       toggleEntryListModeBtn: document.getElementById("toggle-entry-list-mode-btn"),
@@ -86,6 +87,7 @@ window.EntryMemo.UI = (function () {
       summaryText: document.getElementById("summary-text"),
       summaryEditBtn: document.getElementById("summary-edit-btn"),
       summaryEditorArea: document.getElementById("summary-editor-area"),
+      summaryTitleInput: document.getElementById("summary-title-input"),
       summaryTextarea: document.getElementById("summary-textarea"),
       summarySaveBtn: document.getElementById("summary-save-btn"),
       summaryCancelBtn: document.getElementById("summary-cancel-btn"),
@@ -144,7 +146,8 @@ window.EntryMemo.UI = (function () {
       // ストレージ関連
       openFolderBtn: document.getElementById("open-folder-btn"),
       currentModeBadge: document.getElementById("current-mode-badge"),
-      toastContainer: document.getElementById("toast-container")
+      toastContainer: document.getElementById("toast-container"),
+      loadingOverlay: document.getElementById("loading-overlay")
     };
 
     // expandedBlockIdsの初期読み込み
@@ -181,6 +184,47 @@ window.EntryMemo.UI = (function () {
         toast.remove();
       });
     }, 4000);
+  }
+
+  /**
+   * ローディング表示を開始する
+   */
+  function showLoading(message = "処理中...") {
+    if (!elements.loadingOverlay) return;
+    const textEl = elements.loadingOverlay.querySelector(".loading-text");
+    if (textEl) textEl.textContent = message;
+    elements.loadingOverlay.style.display = "flex";
+  }
+
+  /**
+   * ローディング表示を終了する
+   */
+  function hideLoading() {
+    if (!elements.loadingOverlay) return;
+    elements.loadingOverlay.style.display = "none";
+  }
+
+  /**
+   * タイトルやカテゴリー名のバリデーションを行う
+   * @param {string} value 検証する文字列
+   * @param {string} fieldName フィールド名（"エントリー名" など、メッセージ用）
+   * @param {number} maxLength 最大文字数
+   * @returns {string|null} エラーメッセージ（問題なければ null）
+   */
+  function validateName(value, fieldName, maxLength = 255) {
+    const trimmed = (value || "").trim();
+    if (!trimmed) {
+      return `${fieldName}を入力してください。`;
+    }
+    if (trimmed.length > maxLength) {
+      return `${fieldName}は${maxLength}文字以内で入力してください。`;
+    }
+    // Windows禁則文字 \ / : * ? " < > |
+    const invalidChars = /[\\/:*?"<>|]/;
+    if (invalidChars.test(trimmed)) {
+      return `${fieldName}に使用できない文字が含まれています。次の文字は使用できません: \\ / : * ? " < > |`;
+    }
+    return null;
   }
 
   /**
@@ -367,16 +411,18 @@ window.EntryMemo.UI = (function () {
     // 新規エントリー作成実行
     elements.newEntryCreateBtn.addEventListener("click", async () => {
       const title = elements.newEntryNameInput.value.trim();
-      if (!title) {
-        showToast("エントリー名を入力してください。", "warning");
+      const titleError = validateName(title, "エントリー名");
+      if (titleError) {
+        showToast(titleError, "warning");
         return;
       }
 
       let category = "";
       if (elements.newEntryNewCategoryOption.checked) {
         category = elements.newEntryNewCategoryInput.value.trim();
-        if (!category) {
-          showToast("新しいカテゴリー名を入力してください。", "warning");
+        const categoryError = validateName(category, "カテゴリー名");
+        if (categoryError) {
+          showToast(categoryError, "warning");
           return;
         }
       } else {
@@ -387,8 +433,22 @@ window.EntryMemo.UI = (function () {
         }
       }
 
-      closeModal();
-      await window.EntryMemo.App.handleCreateEntry(category, title);
+      elements.newEntryCreateBtn.disabled = true;
+      elements.newEntryCancelBtn.disabled = true;
+      showLoading("エントリーを作成中...");
+      try {
+        const success = await window.EntryMemo.App.handleCreateEntry(category, title);
+        if (success) {
+          closeModal();
+        }
+      } catch (e) {
+        console.error("Error during handleCreateEntry in UI:", e);
+        showToast(`エントリー作成処理でエラーが発生しました: ${e.message}`, "error");
+      } finally {
+        hideLoading();
+        elements.newEntryCreateBtn.disabled = false;
+        elements.newEntryCancelBtn.disabled = false;
+      }
     });
 
     // 概要の編集開始
@@ -396,6 +456,9 @@ window.EntryMemo.UI = (function () {
       const currentEntry = window.EntryMemo.App.getCurrentEntry();
       if (!currentEntry || currentEntry.hasError) return;
       
+      if (elements.summaryTitleInput) {
+        elements.summaryTitleInput.value = currentEntry.summaryTitle || "概要";
+      }
       elements.summaryTextarea.value = currentEntry.summary || "";
       elements.summaryDisplayArea.style.display = "none";
       elements.summaryEditorArea.style.display = "block";
@@ -411,11 +474,31 @@ window.EntryMemo.UI = (function () {
 
     // 概要の編集保存
     elements.summarySaveBtn.addEventListener("click", async () => {
+      const newTitle = elements.summaryTitleInput ? elements.summaryTitleInput.value.trim() : "概要";
+      const titleError = validateName(newTitle, "項目タイトル", 50);
+      if (titleError) {
+        showToast(titleError, "warning");
+        return;
+      }
       const newValue = elements.summaryTextarea.value;
-      await window.EntryMemo.App.handleSaveSummary(newValue);
-      elements.summaryDisplayArea.style.display = "block";
-      elements.summaryEditorArea.style.display = "none";
-      elements.summaryTextarea.style.height = "auto";
+      
+      elements.summarySaveBtn.disabled = true;
+      elements.summaryCancelBtn.disabled = true;
+      showLoading("概要を保存中...");
+      try {
+        const success = await window.EntryMemo.App.handleSaveSummary(newTitle, newValue);
+        if (success) {
+          elements.summaryDisplayArea.style.display = "block";
+          elements.summaryEditorArea.style.display = "none";
+          elements.summaryTextarea.style.height = "auto";
+        }
+      } catch (err) {
+        // エラー時はモーダルを閉じない
+      } finally {
+        hideLoading();
+        elements.summarySaveBtn.disabled = false;
+        elements.summaryCancelBtn.disabled = false;
+      }
     });
 
     // テキストエリア自動高さ調整リスナー
@@ -470,29 +553,45 @@ window.EntryMemo.UI = (function () {
       if (!currentEntry) return;
 
       const newTitle = elements.editEntryNameInput.value.trim();
-      if (!newTitle) {
-        showToast("エントリータイトルを入力してください。", "warning");
+      const titleError = validateName(newTitle, "エントリータイトル");
+      if (titleError) {
+        showToast(titleError, "warning");
         return;
       }
 
       let targetCategory = "";
       if (elements.editEntryNewCategoryOption.checked) {
         targetCategory = elements.editEntryNewCategoryInput.value.trim();
-        if (!targetCategory) {
-          showToast("新しいカテゴリー名を入力してください。", "warning");
+        const categoryError = validateName(targetCategory, "カテゴリー名");
+        if (categoryError) {
+          showToast(categoryError, "warning");
           return;
         }
       } else {
         targetCategory = elements.editEntryCategorySelect.value;
       }
 
-      closeModal();
-      await window.EntryMemo.App.handleEditEntry(
-        currentEntry.categoryName, 
-        currentEntry.fileName, 
-        targetCategory, 
-        newTitle
-      );
+      elements.editEntrySaveBtn.disabled = true;
+      elements.editEntryCancelBtn.disabled = true;
+      showLoading("エントリーを保存中...");
+      try {
+        const success = await window.EntryMemo.App.handleEditEntry(
+          currentEntry.categoryName, 
+          currentEntry.fileName, 
+          targetCategory, 
+          newTitle
+        );
+        if (success) {
+          closeModal();
+        }
+      } catch (e) {
+        console.error("Error during handleEditEntry in UI:", e);
+        showToast(`エントリー保存処理でエラーが発生しました: ${e.message}`, "error");
+      } finally {
+        hideLoading();
+        elements.editEntrySaveBtn.disabled = false;
+        elements.editEntryCancelBtn.disabled = false;
+      }
     });
 
     // ブロック保存ボタン（モーダル内）
@@ -501,11 +600,22 @@ window.EntryMemo.UI = (function () {
       const body = elements.blockInputBody.value;
       const editingBlockId = elements.blockModal.dataset.editingBlockId;
       
-      closeModal();
-      if (editingBlockId) {
-        await window.EntryMemo.App.handleUpdateBlock(editingBlockId, title, body);
-      } else {
-        await window.EntryMemo.App.handleCreateBlock(title, body);
+      elements.blockModalSaveBtn.disabled = true;
+      elements.blockModalCancelBtn.disabled = true;
+      showLoading("ブロックを保存中...");
+      try {
+        if (editingBlockId) {
+          await window.EntryMemo.App.handleUpdateBlock(editingBlockId, title, body);
+        } else {
+          await window.EntryMemo.App.handleCreateBlock(title, body);
+        }
+        closeModal();
+      } catch (e) {
+        // エラー時はモーダルを閉じない
+      } finally {
+        hideLoading();
+        elements.blockModalSaveBtn.disabled = false;
+        elements.blockModalCancelBtn.disabled = false;
       }
     });
 
@@ -533,25 +643,44 @@ window.EntryMemo.UI = (function () {
 
       const isNewEntry = elements.moveNewEntryOption.checked;
       
-      if (isNewEntry) {
-        const category = elements.moveNewEntryCategory.value;
-        let entryName = elements.moveNewEntryName.value.trim();
-        if (!entryName) {
-          const currentEntry = window.EntryMemo.App.getCurrentEntry();
-          const sourceBlock = currentEntry ? currentEntry.blocks.find(r => r.id === blockId) : null;
-          entryName = sourceBlock ? sourceBlock.title : "無題のエントリー";
+      elements.moveModalSubmitBtn.disabled = true;
+      elements.moveModalCancelBtn.disabled = true;
+      try {
+        if (isNewEntry) {
+          const category = elements.moveNewEntryCategory.value;
+          let entryName = elements.moveNewEntryName.value.trim();
+          if (!entryName) {
+            const currentEntry = window.EntryMemo.App.getCurrentEntry();
+            const sourceBlock = currentEntry ? currentEntry.blocks.find(r => r.id === blockId) : null;
+            entryName = sourceBlock ? sourceBlock.title : "無題のエントリー";
+          }
+          const titleError = validateName(entryName, "エントリー名");
+          if (titleError) {
+            showToast(titleError, "warning");
+            return;
+          }
+          
+          showLoading("ブロックを移動中...");
+          await window.EntryMemo.App.handleMoveBlockToNewEntry(blockId, category, entryName);
+          closeModal();
+          elements.moveNewEntryName.value = "";
+        } else {
+          const category = elements.moveTargetCategory.value;
+          const fileName = elements.moveTargetEntry.value;
+          if (!fileName) {
+            showToast("移動先のエントリーを選択してください。", "warning");
+            return;
+          }
+          showLoading("ブロックを移動中...");
+          await window.EntryMemo.App.handleMoveBlock(blockId, category, fileName);
+          closeModal();
         }
-        closeModal();
-        await window.EntryMemo.App.handleMoveBlockToNewEntry(blockId, category, entryName);
-      } else {
-        const category = elements.moveTargetCategory.value;
-        const fileName = elements.moveTargetEntry.value;
-        if (!fileName) {
-          showToast("移動先のエントリーを選択してください。", "warning");
-          return;
-        }
-        closeModal();
-        await window.EntryMemo.App.handleMoveBlock(blockId, category, fileName);
+      } catch (e) {
+        // エラー時はモーダルを閉じない
+      } finally {
+        hideLoading();
+        elements.moveModalSubmitBtn.disabled = false;
+        elements.moveModalCancelBtn.disabled = false;
       }
     });
 
@@ -565,6 +694,8 @@ window.EntryMemo.UI = (function () {
     elements.favoriteToggleBtn.addEventListener("click", () => {
       const currentEntry = window.EntryMemo.App.getCurrentEntry();
       if (currentEntry) {
+        const isTrash = currentEntry.categoryName === "ゴミ箱" || currentEntry.categoryName === "trash";
+        if (isTrash) return;
         window.EntryMemo.App.handleToggleFavorite(currentEntry.categoryName, currentEntry.fileName);
       }
     });
@@ -612,27 +743,123 @@ window.EntryMemo.UI = (function () {
       headerLogo.addEventListener("click", logoClick);
     }
 
-    // 左右スワイプジェスチャーの登録 (トグル遷移)
+    // PCリロードボタン
+    if (elements.headerRefreshBtn) {
+      elements.headerRefreshBtn.addEventListener("click", async () => {
+        elements.headerRefreshBtn.classList.add("spinning-btn");
+        showLoading("最新のデータを読み込み中...");
+        try {
+          await window.EntryMemo.App.handlePullToRefresh();
+          showToast("最新データをロードしました", "success");
+        } catch (err) {
+          showToast("更新に失敗しました: " + err.message, "error");
+        } finally {
+          hideLoading();
+          setTimeout(() => {
+            elements.headerRefreshBtn.classList.remove("spinning-btn");
+          }, 600);
+        }
+      });
+    }
+
+    // 左右スワイプおよび上下引っ張り(Pull-to-refresh)ジェスチャーの登録
     let touchStartX = 0;
     let touchStartY = 0;
+    let isPullingPtr = false;
+    const ptrTriggerThreshold = 75;
+    
+    const ptrIndicator = document.getElementById("pull-to-refresh");
+    const ptrIcon = document.getElementById("pull-indicator-icon");
+
+    const getScrollContainer = () => {
+      const isCategoryActive = elements.categoryEntriesView.style.display === "flex";
+      if (isCategoryActive) {
+        return elements.categoryEntriesView.querySelector(".entry-body-scroll");
+      } else {
+        return elements.entryDetailView.querySelector(".entry-body-scroll");
+      }
+    };
+
     if (elements.mainContent) {
       elements.mainContent.addEventListener("touchstart", (e) => {
         touchStartX = e.changedTouches[0].screenX;
         touchStartY = e.changedTouches[0].screenY;
+        
+        const isModalOpen = elements.blockModal.style.display === "block" || 
+                           elements.moveModal.style.display === "block" || 
+                           elements.newEntryModal.style.display === "block" || 
+                           (elements.editEntryModal && elements.editEntryModal.style.display === "block") || 
+                           elements.shortcutHelpPanel.classList.contains("open") ||
+                           elements.markdownPreviewPanel.classList.contains("open");
+        if (isModalOpen) {
+          isPullingPtr = false;
+          return;
+        }
+
+        const container = getScrollContainer();
+        if (container && container.scrollTop === 0) {
+          isPullingPtr = true;
+        } else {
+          isPullingPtr = false;
+        }
       }, { passive: true });
 
-      elements.mainContent.addEventListener("touchend", (e) => {
+      elements.mainContent.addEventListener("touchmove", (e) => {
+        if (!isPullingPtr) return;
+
+        const currentY = e.changedTouches[0].screenY;
+        const diffY = currentY - touchStartY;
+        const diffX = e.changedTouches[0].screenX - touchStartX;
+
+        if (diffY > 0 && diffY > Math.abs(diffX)) {
+          const pullDistance = Math.min(diffY * 0.4, 90);
+          if (ptrIndicator && ptrIcon) {
+            ptrIndicator.classList.add("pulling");
+            ptrIndicator.style.transform = `translateY(${pullDistance - 60}px)`;
+            ptrIndicator.style.opacity = Math.min(pullDistance / 60, 1);
+            ptrIcon.style.transform = `rotate(${pullDistance * 4}deg)`;
+          }
+        }
+      }, { passive: true });
+
+      elements.mainContent.addEventListener("touchend", async (e) => {
         const touchEndX = e.changedTouches[0].screenX;
         const touchEndY = e.changedTouches[0].screenY;
-        
         const diffX = touchEndX - touchStartX;
         const diffY = touchEndY - touchStartY;
-        
-        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 80) {
-          if (isTextInputActive()) return;
 
-          // 左右どちらのスワイプでも、同じ動作（画面トグル）を行う
-          window.EntryMemo.App.handleSwipeToggle();
+        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 80) {
+          if (!isPullingPtr && !isTextInputActive()) {
+            window.EntryMemo.App.handleSwipeToggle();
+          }
+        }
+        
+        if (isPullingPtr) {
+          isPullingPtr = false;
+          const pullDistance = diffY * 0.4;
+          
+          if (ptrIndicator) {
+            ptrIndicator.classList.remove("pulling");
+            if (pullDistance >= ptrTriggerThreshold) {
+              ptrIndicator.classList.add("refreshing");
+              ptrIndicator.style.transform = "translateY(0px)";
+              ptrIndicator.style.opacity = 1;
+              
+              try {
+                await window.EntryMemo.App.handlePullToRefresh();
+                showToast("最新データをロードしました", "success");
+              } catch (err) {
+                showToast("リロードに失敗しました: " + err.message, "error");
+              } finally {
+                ptrIndicator.classList.remove("refreshing");
+                ptrIndicator.style.transform = "translateY(-100%)";
+                ptrIndicator.style.opacity = 0;
+              }
+            } else {
+              ptrIndicator.style.transform = "translateY(-100%)";
+              ptrIndicator.style.opacity = 0;
+            }
+          }
         }
       }, { passive: true });
     }
@@ -787,6 +1014,8 @@ window.EntryMemo.UI = (function () {
         if (elements.entryDetailView.style.display === "flex") {
           const currentEntry = window.EntryMemo.App.getCurrentEntry();
           if (currentEntry) {
+            const isTrash = currentEntry.categoryName === "ゴミ箱" || currentEntry.categoryName === "trash";
+            if (isTrash) return;
             e.preventDefault();
             window.EntryMemo.App.handleToggleFavorite(currentEntry.categoryName, currentEntry.fileName);
           }
@@ -1387,7 +1616,7 @@ window.EntryMemo.UI = (function () {
     elements.entryDetailView.style.display = "flex";
     elements.categoryEntriesView.style.display = "none";
     
-    updateFavoriteButton(entryData.isFavorite);
+    updateFavoriteButton(entryData.isFavorite, entryData.categoryName);
     updateSortBlocksBtnText();
     
     // エラーバナーの処理
@@ -1407,8 +1636,41 @@ window.EntryMemo.UI = (function () {
 
     elements.mergeActionBar.style.display = "none";
 
-    const categoryPrefix = entryData.categoryName ? `${entryData.categoryName} ＞ ` : "";
-    elements.currentEntryTitle.textContent = categoryPrefix + (entryData.title || entryData.fileName);
+    elements.currentEntryTitle.innerHTML = "";
+    
+    // 1階層目: 「すべて」へのリンク
+    const allLink = document.createElement("a");
+    allLink.href = "#";
+    allLink.className = "breadcrumb-category-link";
+    allLink.textContent = "すべて";
+    allLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      window.EntryMemo.App.showAllEntriesListView();
+    });
+    elements.currentEntryTitle.appendChild(allLink);
+    
+    const separator1 = document.createTextNode(" ＞ ");
+    elements.currentEntryTitle.appendChild(separator1);
+
+    // 2階層目: カテゴリー名へのリンク
+    if (entryData.categoryName) {
+      const categoryLink = document.createElement("a");
+      categoryLink.href = "#";
+      categoryLink.className = "breadcrumb-category-link";
+      categoryLink.textContent = entryData.categoryName;
+      categoryLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        window.EntryMemo.App.handleSelectCategory(entryData.categoryName);
+      });
+      elements.currentEntryTitle.appendChild(categoryLink);
+      
+      const separator2 = document.createTextNode(" ＞ ");
+      elements.currentEntryTitle.appendChild(separator2);
+    }
+    
+    // 3階層目: エントリータイトル
+    const titleText = document.createTextNode(entryData.title || entryData.fileName);
+    elements.currentEntryTitle.appendChild(titleText);
     if (isNewLoad) {
       setTimeout(() => {
         elements.currentEntryTitle.focus();
@@ -1416,11 +1678,25 @@ window.EntryMemo.UI = (function () {
     }
 
     // 概要の表示
+    const summaryTitle = entryData.summaryTitle || "概要";
+    if (elements.summarySection) {
+      const summaryHeader = elements.summarySection.querySelector("h3");
+      if (summaryHeader) {
+        summaryHeader.textContent = `📌 ${summaryTitle}`;
+      }
+    }
+    if (elements.summaryEditBtn) {
+      elements.summaryEditBtn.textContent = `${summaryTitle}を編集`;
+    }
+    if (elements.summaryTextarea) {
+      elements.summaryTextarea.placeholder = `現在の結論、方針、未解決事項などを${summaryTitle}に記述してください...`;
+    }
+
     if (entryData.summary) {
       elements.summaryText.textContent = entryData.summary;
       elements.summaryText.style.display = "block";
     } else {
-      elements.summaryText.textContent = "(概要は設定されていません)";
+      elements.summaryText.textContent = `(${summaryTitle}は設定されていません)`;
       elements.summaryText.style.display = "block";
     }
     
@@ -1690,13 +1966,19 @@ window.EntryMemo.UI = (function () {
         // スター
         const star = document.createElement("span");
         star.className = "compact-entry-star";
-        star.textContent = t.isFavorite ? "★" : "☆";
+        const isTrash = entryCategory === "ゴミ箱" || entryCategory === "trash";
+        if (isTrash) {
+          star.textContent = "🗑️";
+          star.style.cursor = "default";
+        } else {
+          star.textContent = t.isFavorite ? "★" : "☆";
+          star.addEventListener("click", (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            window.EntryMemo.App.handleToggleFavorite(entryCategory, t.fileName);
+          });
+        }
         star.style.marginRight = "6px";
-        star.addEventListener("click", (e) => {
-          e.stopPropagation();
-          e.preventDefault();
-          window.EntryMemo.App.handleToggleFavorite(entryCategory, t.fileName);
-        });
         item.appendChild(star);
 
         // タイトル
@@ -1749,13 +2031,19 @@ window.EntryMemo.UI = (function () {
           // スター
           const star = document.createElement("span");
           star.className = "compact-entry-star";
-          star.textContent = t.isFavorite ? "★" : "☆";
+          const isTrash = category === "ゴミ箱" || category === "trash";
+          if (isTrash) {
+            star.textContent = "🗑️";
+            star.style.cursor = "default";
+          } else {
+            star.textContent = t.isFavorite ? "★" : "☆";
+            star.addEventListener("click", (e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              window.EntryMemo.App.handleToggleFavorite(category, t.fileName);
+            });
+          }
           star.style.marginRight = "6px";
-          star.addEventListener("click", (e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            window.EntryMemo.App.handleToggleFavorite(category, t.fileName);
-          });
           item.appendChild(star);
 
           // タイトル
@@ -1778,13 +2066,23 @@ window.EntryMemo.UI = (function () {
     }
   }
 
-  function updateFavoriteButton(isFav) {
-    if (isFav) {
-      elements.favoriteToggleBtn.textContent = "★";
-      elements.favoriteToggleBtn.classList.add("active");
-    } else {
-      elements.favoriteToggleBtn.textContent = "☆";
+  function updateFavoriteButton(isFav, categoryName = "") {
+    const isTrash = categoryName === "ゴミ箱" || categoryName === "trash";
+    if (isTrash) {
+      elements.favoriteToggleBtn.textContent = "🗑️";
       elements.favoriteToggleBtn.classList.remove("active");
+      elements.favoriteToggleBtn.disabled = true;
+      elements.favoriteToggleBtn.title = "ゴミ箱に入っているためお気に入りに追加できません";
+    } else {
+      elements.favoriteToggleBtn.disabled = false;
+      elements.favoriteToggleBtn.title = "お気に入り（Pickup）に追加/解除 (S)";
+      if (isFav) {
+        elements.favoriteToggleBtn.textContent = "★";
+        elements.favoriteToggleBtn.classList.add("active");
+      } else {
+        elements.favoriteToggleBtn.textContent = "☆";
+        elements.favoriteToggleBtn.classList.remove("active");
+      }
     }
   }
 
@@ -1809,6 +2107,8 @@ window.EntryMemo.UI = (function () {
   return {
     init,
     showToast,
+    showLoading,
+    hideLoading,
     closeModal,
     renderSidebar,
     renderCurrentEntry,

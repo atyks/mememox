@@ -329,168 +329,207 @@ window.EntryMemo.Storage = (function () {
 
 
   /**
-   * --- ServerStorage ---
-   * Webサーバー環境のAPIを経由してデータを読み書きする
+   * ServerStorage - サーバー上のPHP APIと通信するストレージ（インメモリキャッシュ同期モデル）
    */
   function ServerStorage(apiUrl) {
     this.apiUrl = apiUrl;
-    this.revisions = {}; // { "category/file.md": "sha256:..." }
+    this.cache = {};       // {"category/fileName.md": {category, fileName, content, revision, mtime}}
+    this.categories = [];  // ["inbox", "work", ...]
+    this.favorites = new Set(); // Set {"category/fileName.md", ...}
   }
 
-  /**
-   * 共通の API リクエストヘルパー (JSON入出力を統一)
-   */
-  ServerStorage.prototype._request = async function (action, params = {}, options = {}) {
-    let url = `${this.apiUrl}?action=${action}`;
-    let fetchOptions = {};
-
-    if (options.method === "POST") {
-      fetchOptions.method = "POST";
-      fetchOptions.headers = {
-        "Content-Type": "application/json"
-      };
-      fetchOptions.body = JSON.stringify(params);
-    } else {
-      const query = new URLSearchParams(params).toString();
-      if (query) url += `&${query}`;
+  ServerStorage.prototype._request = async function (action, data = null) {
+    const url = `${this.apiUrl}?action=${action}`;
+    const options = {
+      method: data ? "POST" : "GET",
+      headers: { "Cache-Control": "no-cache" }
+    };
+    if (data) {
+      options.headers["Content-Type"] = "application/json";
+      options.body = JSON.stringify(data);
     }
-
-    const res = await fetch(url, fetchOptions);
-    if (!res.ok) {
-      let errMsg = "サーバーとの通信エラーが発生しました。";
-      try {
-        const errJson = await res.json();
-        if (errJson && errJson.error) errMsg = errJson.error;
-      } catch (_) {}
-      throw new Error(errMsg);
+    const response = await fetch(url, options);
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.error || `HTTP error! status: ${response.status}`);
     }
-
-    return await res.json();
+    return result;
   };
 
-  /**
-   * クライアント側での SHA-256 ハッシュ値 (revision) 計算ヘルパー (Web Crypto API 使用)
-   */
-  ServerStorage.prototype._calculateHash = async function (message) {
-    const msgBuffer = new TextEncoder().encode(message);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    return 'sha256:' + hashHex;
-  };
-
-  /**
-   * 初期化 (ダミー化。一括ロードはセキュリティ上廃止)
-   */
   ServerStorage.prototype.init = async function () {
+    const res = await this._request("load_all");
+    this.cache = res.entries || {};
+    this.categories = res.categories || [];
+    this.favorites = new Set(res.favorites || []);
     return true;
   };
 
   ServerStorage.prototype.listCategories = async function () {
-    const categories = await this._request("list_categories");
-    const hasTrash = categories.some(k => k === "ゴミ箱" || k === "trash");
+    const cats = [...this.categories];
+    const hasTrash = cats.some(k => k === "ゴミ箱" || k === "trash");
     if (!hasTrash) {
-      categories.push("ゴミ箱");
+      cats.push("ゴミ箱");
     }
-    const compareCategories = window.EntryMemo.Utils.compareCategories;
-    return categories.sort(compareCategories);
+    return cats.sort(window.EntryMemo.Utils.compareCategories);
   };
 
   ServerStorage.prototype.listEntries = async function (categoryName) {
-    const entries = await this._request("list_entries", { category: categoryName });
+    const entries = [];
+    for (const key in this.cache) {
+      const entry = this.cache[key];
+      if (entry.category === categoryName) {
+        entries.push({
+          fileName: entry.fileName,
+          mtime: entry.mtime || 0
+        });
+      }
+    }
     return entries.sort((a, b) => a.fileName.localeCompare(b.fileName));
   };
 
   ServerStorage.prototype.readEntry = async function (categoryName, fileName) {
-    const res = await this._request("read_entry", { category: categoryName, file: fileName });
-    if (!res.ok || !res.data) {
-      throw new Error(res.error || "エントリーの読み込みに失敗しました。");
-    }
-    
-    // リビジョン情報を記録
     const key = `${categoryName}/${fileName}`;
-    this.revisions[key] = res.data.revision;
-    
-    return res.data.content;
+    const entry = this.cache[key];
+    if (!entry) {
+      throw new Error(`エントリーが見つかりません: ${key}`);
+    }
+    return entry.content;
   };
 
   ServerStorage.prototype.writeEntry = async function (categoryName, fileName, markdownText) {
     const key = `${categoryName}/${fileName}`;
-    const baseRevision = this.revisions[key] || "";
+    const entry = this.cache[key];
+    const baseRevision = entry ? entry.revision : "";
 
     const res = await this._request("write_entry", {
       category: categoryName,
       file: fileName,
       content: markdownText,
       baseRevision: baseRevision
-    }, { method: "POST" });
+    });
 
-    if (!res.ok) {
-      throw new Error(res.error || "エントリーの保存に失敗しました。");
+    // 保存成功時にキャッシュを更新
+    this.cache[key] = {
+      category: categoryName,
+      fileName: fileName,
+      content: markdownText,
+      revision: res.revision,
+      mtime: res.mtime
+    };
+
+    if (!this.categories.includes(categoryName)) {
+      this.categories.push(categoryName);
     }
-
-    // 保存したコンテンツのハッシュを再計算してローカルリビジョンを更新
-    this.revisions[key] = await this._calculateHash(markdownText);
+    return true;
   };
 
-  ServerStorage.prototype.createEntry = async function (categoryName, fileName, markdownText) {
+  ServerStorage.prototype.createEntry = async function (categoryName, titleText, markdownText) {
     const res = await this._request("create_entry", {
       category: categoryName,
-      file: fileName,
+      file: titleText, // titleText を file として渡す (仕様書と整合性を確認)
       content: markdownText
-    }, { method: "POST" });
+    });
 
-    if (!res.ok || !res.fileName) {
-      throw new Error(res.error || "新規エントリーの作成に失敗しました。");
+    const key = `${categoryName}/${res.fileName}`;
+    this.cache[key] = {
+      category: categoryName,
+      fileName: res.fileName,
+      content: markdownText,
+      revision: res.revision,
+      mtime: res.mtime
+    };
+
+    if (!this.categories.includes(categoryName)) {
+      this.categories.push(categoryName);
     }
-
-    const actualFileName = res.fileName;
-    const key = `${categoryName}/${actualFileName}`;
-    
-    // 新規作成されたファイルのハッシュを登録
-    this.revisions[key] = await this._calculateHash(markdownText);
-    
-    return actualFileName;
+    return res.fileName;
   };
 
-  ServerStorage.prototype.moveEntry = async function (oldCategoryName, oldFileName, newCategoryName, newFileName) {
+  ServerStorage.prototype.moveEntry = async function (oldCategory, oldFile, newCategory, newFile) {
     const res = await this._request("move_entry", {
-      old_category: oldCategoryName,
-      old_file: oldFileName,
-      new_category: newCategoryName,
-      new_file: newFileName
-    }, { method: "POST" });
+      old_category: oldCategory,
+      old_file: oldFile,
+      new_category: newCategory,
+      new_file: newFile
+    });
 
-    if (!res.ok || !res.fileName) {
-      throw new Error(res.error || "エントリーの移動に失敗しました。");
+    const oldKey = `${oldCategory}/${oldFile}`;
+    const newKey = `${newCategory}/${newFile}`;
+    
+    // キャッシュ移行
+    const oldEntry = this.cache[oldKey];
+    if (oldEntry) {
+      this.cache[newKey] = {
+        category: newCategory,
+        fileName: newFile,
+        content: oldEntry.content,
+        revision: res.revision,
+        mtime: res.mtime
+      };
+      delete this.cache[oldKey];
     }
 
-    const actualFileName = res.fileName;
-    
-    // リビジョンの引越し
-    const oldKey = `${oldCategoryName}/${oldFileName}`;
-    const newKey = `${newCategoryName}/${actualFileName}`;
-    if (this.revisions[oldKey]) {
-      this.revisions[newKey] = this.revisions[oldKey];
-      delete this.revisions[oldKey];
+    // カテゴリーリスト更新
+    if (!this.categories.includes(newCategory)) {
+      this.categories.push(newCategory);
     }
-    
-    return actualFileName;
+    // 旧カテゴリーが空になったかチェック
+    const hasRemaining = Object.values(this.cache).some(e => e.category === oldCategory);
+    if (!hasRemaining) {
+      this.categories = this.categories.filter(c => c !== oldCategory);
+    }
+
+    // お気に入りパスの引越し
+    if (this.favorites.has(oldKey)) {
+      this.favorites.delete(oldKey);
+      this.favorites.add(newKey);
+      await this.saveFavorites();
+    }
+
+    return res.fileName;
   };
 
   ServerStorage.prototype.deleteEntry = async function (categoryName, fileName) {
-    const res = await this._request("delete_entry", {
+    await this._request("delete_entry", {
       category: categoryName,
       file: fileName
-    }, { method: "POST" });
+    });
 
-    if (!res.ok) {
-      throw new Error(res.error || "エントリーの削除に失敗しました。");
+    const key = `${categoryName}/${fileName}`;
+    delete this.cache[key];
+
+    const hasRemaining = Object.values(this.cache).some(e => e.category === categoryName);
+    if (!hasRemaining) {
+      this.categories = this.categories.filter(c => c !== categoryName);
     }
 
-    // リビジョンの削除
+    if (this.favorites.has(key)) {
+      this.favorites.delete(key);
+      await this.saveFavorites();
+    }
+
+    return true;
+  };
+
+  ServerStorage.prototype.isFavorite = function (categoryName, fileName) {
     const key = `${categoryName}/${fileName}`;
-    delete this.revisions[key];
+    return this.favorites.has(key);
+  };
+
+  ServerStorage.prototype.toggleFavorite = async function (categoryName, fileName) {
+    const key = `${categoryName}/${fileName}`;
+    if (this.favorites.has(key)) {
+      this.favorites.delete(key);
+    } else {
+      this.favorites.add(key);
+    }
+    await this.saveFavorites();
+    return this.favorites.has(key);
+  };
+
+  ServerStorage.prototype.saveFavorites = async function () {
+    const list = Array.from(this.favorites);
+    await this._request("save_favorites", { favorites: list });
   };
 
   return {
