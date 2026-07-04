@@ -15,6 +15,34 @@ window.EntryMemo.App = (function () {
   let lastActiveEntryCategory = localStorage.getItem("EntryMemo.lastActiveEntryCategory") || "";
   let lastActiveEntryFileName = localStorage.getItem("EntryMemo.lastActiveEntryFileName") || "";
 
+  // 無操作自動リロード監視用の状態変数
+  let lastActivityTime = Date.now();
+  const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5分無操作で再ロード
+  let isAutoReloading = false;
+
+  async function handleUserActivity() {
+    const now = Date.now();
+    const elapsed = now - lastActivityTime;
+
+    if (elapsed > INACTIVITY_TIMEOUT && !isAutoReloading && currentStorage) {
+      lastActivityTime = now;
+      isAutoReloading = true;
+      console.log("Inactivity timeout exceeded. Auto-reloading data...");
+      
+      try {
+        await handlePullToRefresh();
+        UI.showToast(UI.t("autoReloadSuccess", "一定時間操作がなかったため、最新データを自動読み込みしました。"), "success");
+      } catch (e) {
+        console.error("Auto-reload failed:", e);
+      } finally {
+        isAutoReloading = false;
+        lastActivityTime = Date.now();
+      }
+    } else {
+      lastActivityTime = now;
+    }
+  }
+
   function loadFavorites() {
     try {
       const favs = localStorage.getItem("EntryMemo.favorites");
@@ -139,6 +167,12 @@ window.EntryMemo.App = (function () {
 
     // ブラウザの戻る・進む制御用のダミー履歴をプッシュ
     history.pushState({ page: "app" }, "");
+
+    // ユーザー操作による無操作タイムアウト後の自動リロード監視登録
+    const activityEvents = ["click", "keydown", "scroll", "touchstart"];
+    activityEvents.forEach(evtName => {
+      document.addEventListener(evtName, handleUserActivity, { passive: true });
+    });
   }
  
   /**

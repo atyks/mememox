@@ -194,7 +194,8 @@ window.EntryMemo.UI = (function () {
       noBlocksSelectedForMerge: "マージ対象のブロックが選択されていません。",
       confirmDeleteSelectedBlocks: "選択された ${count} 個のブロックを削除しますか？\n削除したブロックは元に戻せません。",
       confirmMergeSelectedBlocks: "選択された ${count} 件のブロックを1つにマージしますか？\nマージ後は元の各ブロックの見出しレベルが1段下がり、現在のエントリー内で1つのブロックに統合されます。",
-      confirmDeleteBlockId: "このブロック [${id}] を削除しますか？\n削除したブロックは元に戻せません。"
+      confirmDeleteBlockId: "このブロック [${id}] を削除しますか？\n削除したブロックは元に戻せません。",
+      autoReloadSuccess: "一定時間操作がなかったため、最新データを自動読み込みしました。"
     },
     en: {
       name: "English",
@@ -355,7 +356,8 @@ window.EntryMemo.UI = (function () {
       noBlocksSelectedForMerge: "No blocks selected for merge.",
       confirmDeleteSelectedBlocks: "Are you sure you want to delete the ${count} selected block(s)?\nThis action cannot be undone.",
       confirmMergeSelectedBlocks: "Are you sure you want to merge the ${count} selected block(s) into one?\nAfter merging, the heading levels of the original blocks will be lowered by one step and integrated into a single block within the current entry.",
-      confirmDeleteBlockId: "Are you sure you want to delete this block [${id}]?\nThis action cannot be undone."
+      confirmDeleteBlockId: "Are you sure you want to delete this block [${id}]?\nThis action cannot be undone.",
+      autoReloadSuccess: "Data auto-reloaded due to inactivity."
     }
   };
 

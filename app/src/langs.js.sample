@@ -126,7 +126,8 @@
     //   helpItemModalCancel: "Fermer sans enregistrer",
     //   markdownPreviewTitle: "📄 Aperçu Markdown",
     //   copy: "Copier",
-    //   loadingText: "Enregistrement..."
+    //   loadingText: "Enregistrement...",
+    //   autoReloadSuccess: "Données actualisées automatiquement après inactivité."
     // }
   };
 })();
