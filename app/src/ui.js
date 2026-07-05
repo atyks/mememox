@@ -1191,7 +1191,7 @@ window.EntryMemo.UI = (function () {
       addBlockLongPressTimer = setTimeout(() => {
         isAddBlockLongPressed = true;
         handleLongPressAction();
-      }, 2000);
+      }, 1000);
     };
 
     const cancelAddBlockLongPress = () => {
@@ -1238,7 +1238,7 @@ window.EntryMemo.UI = (function () {
       addEntryLongPressTimer = setTimeout(() => {
         isAddEntryLongPressed = true;
         handleLongPressAction();
-      }, 2000);
+      }, 1000);
     };
 
     const cancelAddEntryLongPress = () => {
