@@ -187,3 +187,23 @@ When writing files, the API writes to a temporary file first, and only replaces 
 1. Upon loading, the server returns a SHA-256 hash value as `revision`.
 2. When saving, the client submits the `baseRevision` along with the request.
 3. The server compares the current disk revision with the client's `baseRevision`, rejecting saves with a `409 Conflict` if they mismatch.
+
+---
+
+## 9. Layout & CSS Architecture (Crucial Development Notes)
+
+This application is designed as a Single Page Application (SPA) that prevents global page scrolling and instead relies on independent scroll containment within the content views. Keep the following height hierarchy in mind when modifying styles:
+
+### Height Hierarchy & Scroll Containment
+* **`body`**: Locked to `height: 100vh; height: 100dvh; overflow: hidden;` to disable browser window scrolling.
+* **`#header-bar`**: Styled with a fixed height of `56px` (`flex-shrink: 0;`).
+* **`#app-container`**: Sized to `calc(100vh - 56px);` or `calc(100dvh - 56px);` to cover the remaining height.
+* **`#main-content`**: Explicitly set to **`height: 100%`** to strictly inherit the height of `#app-container`.
+  * *Note: Previously, this was styled as `100vh`, which pushed the container down by `56px` on PC layouts, causing the bottom blocks to overflow and become inaccessible. Always use `height: 100%` for both desktop and mobile layouts.*
+* **`#entry-detail-view` / `#category-entries-view`**: Configured with `height: 100%;`.
+* **`.entry-body-scroll`**: Sized with `flex-grow: 1; overflow-y: auto; min-height: 0;` to handle independent vertical scrolling.
+
+### Responsive Design (`@media (max-width: 768px)`)
+* On mobile screens, `#app-container` wraps into `flex-direction: column` to stack elements vertically below the header.
+* Tap targets (e.g., header action buttons and the favorite button) are expanded to at least `44px` to ensure touch friendliness.
+
