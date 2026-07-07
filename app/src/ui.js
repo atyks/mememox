@@ -2529,6 +2529,10 @@ window.EntryMemo.UI = (function () {
 
     await updateMoveModalEntries(elements.moveTargetCategory.value);
     
+    if (currentEntry) {
+      elements.moveTargetEntry.value = currentEntry.fileName;
+    }
+    
     // エントリーがセットされたら、親ブロックリストを更新する
     await updateMoveModalBlocks(elements.moveTargetCategory.value, elements.moveTargetEntry.value, block.id);
     
