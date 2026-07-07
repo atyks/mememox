@@ -917,27 +917,34 @@ window.EntryMemo.App = (function () {
   async function handleMoveBlockToNewEntry(blockId, targetCategory, entryName) {
     if (isReadOnly()) return;
 
-    const sourceBlock = activeEntryObj.blocks.find(r => r.id === blockId);
-    if (!sourceBlock) {
+    const currentEntry = getCurrentEntry();
+    if (!currentEntry) return;
+
+    // 移動元ブロックと、その配下の子孫ブロック（サブツリー）を特定
+    const movingBlocks = Utils.getSubtreeBlocks(currentEntry.blocks, blockId);
+    if (movingBlocks.length === 0) {
       UI.showToast("移動対象のブロックが見つかりません。", "error");
       return;
     }
 
+    const sourceBlock = movingBlocks[0];
+    const sourceLevel = sourceBlock.level || 3;
+    const levelDiff = sourceLevel - 3; // 新エントリーでは親を第一階層 (H3) にするためのレベルシフト量
+
     UI.showLoading("エントリーを作成中...");
     try {
-      // 1. 新規エントリーのMarkdownを作成
+      // 1. 新規エントリーのMarkdownを作成（関係性を保ったままレベルを調整）
       const newEntryObj = {
         title: entryName,
         summary: "",
         summaryTitle: "概要",
-        blocks: [
-          {
-            id: sourceBlock.id,
-            title: sourceBlock.title,
-            body: sourceBlock.body,
-            datetime: sourceBlock.datetime
-          }
-        ]
+        blocks: movingBlocks.map(b => ({
+          id: b.id,
+          title: b.title,
+          body: b.body,
+          datetime: b.datetime,
+          level: Math.max(3, (b.level || 3) - levelDiff)
+        }))
       };
 
       const newEntryMd = Markdown.serializeEntry(newEntryObj);
@@ -949,10 +956,11 @@ window.EntryMemo.App = (function () {
       // 3. 移動先新規ファイルを保存
       const actualFileName = await currentStorage.createEntry(targetCategory, fileCandidate, newEntryMd);
 
-      // 4. 新エントリー保存成功後にだけ、元エントリーからブロックを削除する
+      // 4. 新エントリー保存成功後にだけ、元エントリーからサブツリー全体を削除する
       let sourceRemovedSuccessfully = false;
       try {
-        activeEntryObj.blocks = activeEntryObj.blocks.filter(r => r.id !== blockId);
+        const movingIds = new Set(movingBlocks.map(b => b.id));
+        activeEntryObj.blocks = activeEntryObj.blocks.filter(r => !movingIds.has(r.id));
         const sourceSerialized = Markdown.serializeEntry(activeEntryObj);
         await currentStorage.writeEntry(activeEntryObj.categoryName, activeEntryObj.fileName, sourceSerialized);
         sourceRemovedSuccessfully = true;
@@ -1090,7 +1098,10 @@ window.EntryMemo.App = (function () {
 
     UI.showLoading("ブロックを削除中...");
     try {
-      activeEntryObj.blocks = activeEntryObj.blocks.filter(r => r.id !== blockId);
+      const subtree = Utils.getSubtreeBlocks(activeEntryObj.blocks, blockId);
+      const subtreeIds = new Set(subtree.map(b => b.id));
+      
+      activeEntryObj.blocks = activeEntryObj.blocks.filter(r => !subtreeIds.has(r.id));
       const md = Markdown.serializeEntry(activeEntryObj);
       await currentStorage.writeEntry(activeEntryObj.categoryName, activeEntryObj.fileName, md);
 
@@ -1109,7 +1120,13 @@ window.EntryMemo.App = (function () {
 
     UI.showLoading("選択したブロックを削除中...");
     try {
-      activeEntryObj.blocks = activeEntryObj.blocks.filter(r => !blockIds.includes(r.id));
+      const allSubtreeIds = new Set();
+      blockIds.forEach(id => {
+        const subtree = Utils.getSubtreeBlocks(activeEntryObj.blocks, id);
+        subtree.forEach(b => allSubtreeIds.add(b.id));
+      });
+      
+      activeEntryObj.blocks = activeEntryObj.blocks.filter(r => !allSubtreeIds.has(r.id));
       const md = Markdown.serializeEntry(activeEntryObj);
       await currentStorage.writeEntry(activeEntryObj.categoryName, activeEntryObj.fileName, md);
 
@@ -1127,7 +1144,17 @@ window.EntryMemo.App = (function () {
   async function handleMergeBlocks(blockIds) {
     if (isReadOnly()) return;
 
-    const selectedBlocks = activeEntryObj.blocks.filter(r => blockIds.includes(r.id));
+    // 選択されたブロックと、それぞれの子孫ブロックをすべて特定
+    const allMovingBlocks = [];
+    blockIds.forEach(id => {
+      const subtree = Utils.getSubtreeBlocks(activeEntryObj.blocks, id);
+      allMovingBlocks.push(...subtree);
+    });
+
+    // 重複を排除しつつ、元の blocks の順序（昇順）を維持した配列を作る
+    const uniqueIds = new Set(allMovingBlocks.map(b => b.id));
+    const selectedBlocks = activeEntryObj.blocks.filter(r => uniqueIds.has(r.id));
+
     if (selectedBlocks.length === 0) {
       UI.showToast("マージ対象のブロックが選択されていません。", "error");
       return;
@@ -1141,7 +1168,7 @@ window.EntryMemo.App = (function () {
       const mergedBlock = Markdown.mergeBlocks(selectedBlocks, firstBlockTitle, allExistingIds);
 
       // 元のエントリーオブジェクトから元のブロックを削除し、マージされたブロックを追加する
-      activeEntryObj.blocks = activeEntryObj.blocks.filter(r => !blockIds.includes(r.id));
+      activeEntryObj.blocks = activeEntryObj.blocks.filter(r => !uniqueIds.has(r.id));
       activeEntryObj.blocks.push(mergedBlock);
 
       // 保存

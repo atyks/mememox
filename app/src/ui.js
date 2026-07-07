@@ -269,8 +269,10 @@ window.EntryMemo.UI = (function () {
       reloadFailed: "更新に失敗しました：",
       noBlocksSelectedForMerge: "マージ対象のブロックが選択されていません。",
       confirmDeleteSelectedBlocks: "選択された ${count} 個のブロックを削除しますか？\n削除したブロックは元に戻せません。",
+      confirmDeleteSelectedBlocksWithChildren: "選択されたブロックの中に、子ブロックを持つものが含まれています。\n削除すると、それらの配下にある子ブロックもすべて一緒に削除されます。\n\n本当に削除しますか？",
       confirmMergeSelectedBlocks: "選択された ${count} 件のブロックを1つにマージしますか？\nマージ後は元の各ブロックの見出しレベルが1段下がり、現在のエントリー内で1つのブロックに統合されます。",
       confirmDeleteBlockId: "このブロック [${id}] を削除しますか？\n削除したブロックは元に戻せません。",
+      confirmDeleteBlockWithChildren: "このブロック [${id}] には子ブロックが含まれています。\n削除すると、配下の子ブロックもすべて一緒に削除されます。\n\n本当に削除しますか？",
       autoReloadSuccess: "一定時間操作がなかったため、最新データを自動読み込みしました。",
       allBlocksOpened: "すべてのブロックを展開しました。",
       allBlocksClosed: "すべてのブロックを折りたたみました。"
@@ -437,8 +439,10 @@ window.EntryMemo.UI = (function () {
       reloadFailed: "Update failed: ",
       noBlocksSelectedForMerge: "No blocks selected for merge.",
       confirmDeleteSelectedBlocks: "Are you sure you want to delete the ${count} selected block(s)?\nThis action cannot be undone.",
+      confirmDeleteSelectedBlocksWithChildren: "Some of the selected blocks contain child blocks.\nAll nested child blocks will also be deleted.\n\nAre you sure you want to delete?",
       confirmMergeSelectedBlocks: "Are you sure you want to merge the ${count} selected block(s) into one?\nAfter merging, the heading levels of the original blocks will be lowered by one step and integrated into a single block within the current entry.",
       confirmDeleteBlockId: "Are you sure you want to delete this block [${id}]?\nThis action cannot be undone.",
+      confirmDeleteBlockWithChildren: "This block [${id}] contains child blocks.\nAll nested child blocks will also be deleted.\n\nAre you sure you want to delete?",
       autoReloadSuccess: "Data auto-reloaded due to inactivity.",
       allBlocksOpened: "Expanded all blocks.",
       allBlocksClosed: "Collapsed all blocks."
@@ -1770,7 +1774,28 @@ window.EntryMemo.UI = (function () {
       const performBatchDelete = () => {
         const checkedBoxes = Array.from(elements.blocksList.querySelectorAll(".block-select-checkbox:checked"));
         if (checkedBoxes.length > 0) {
-          const confirmDelete = confirm(t("confirmDeleteSelectedBlocks", "選択された ${count} 個のブロックを削除しますか？\n削除したブロックは元に戻せません。").replace("${count}", checkedBoxes.length));
+          const blockIds = checkedBoxes.map(cb => cb.dataset.recordId);
+          const currentEntry = window.EntryMemo.App.getCurrentEntry();
+          
+          let hasChildrenInSelection = false;
+          if (currentEntry) {
+            for (const id of blockIds) {
+              const subtree = Utils.getSubtreeBlocks(currentEntry.blocks, id);
+              if (subtree.length > 1) {
+                hasChildrenInSelection = true;
+                break;
+              }
+            }
+          }
+          
+          let confirmMsg;
+          if (hasChildrenInSelection) {
+            confirmMsg = t("confirmDeleteSelectedBlocksWithChildren", "選択されたブロックの中に、子ブロックを持つものが含まれています。\n削除すると、それらの配下にある子ブロックもすべて一緒に削除されます。\n\n本当に削除しますか？");
+          } else {
+            confirmMsg = t("confirmDeleteSelectedBlocks", "選択された ${count} 個のブロックを削除しますか？\n削除したブロックは元に戻せません。").replace("${count}", checkedBoxes.length);
+          }
+
+          const confirmDelete = confirm(confirmMsg);
           if (confirmDelete) {
             const blockIds = checkedBoxes.map(cb => cb.dataset.recordId);
             const currentEntry = window.EntryMemo.App.getCurrentEntry();
@@ -2842,7 +2867,17 @@ window.EntryMemo.UI = (function () {
         deleteBtn.textContent = "削除";
         deleteBtn.style.color = "var(--color-error)";
         deleteBtn.addEventListener("click", () => {
-          const confirmDelete = confirm(t("confirmDeleteBlockId", "このブロック [${id}] を削除しますか？\n削除したブロックは元に戻せません。").replace("${id}", rec.id));
+          const subtree = Utils.getSubtreeBlocks(blocks, rec.id);
+          const hasChildren = subtree.length > 1;
+          
+          let confirmMsg;
+          if (hasChildren) {
+            confirmMsg = t("confirmDeleteBlockWithChildren", "このブロック [${id}] には子ブロックが含まれています。\n削除すると、配下の子ブロックもすべて一緒に削除されます。\n\n本当に削除しますか？").replace("${id}", rec.id);
+          } else {
+            confirmMsg = t("confirmDeleteBlockId", "このブロック [${id}] を削除しますか？\n削除したブロックは元に戻せません。").replace("${id}", rec.id);
+          }
+
+          const confirmDelete = confirm(confirmMsg);
           if (confirmDelete) {
             const targetIdx = displayBlocks.findIndex(b => b.id === rec.id);
             if (targetIdx + 1 < displayBlocks.length) {
