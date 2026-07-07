@@ -103,12 +103,42 @@ window.EntryMemo.Utils = (function () {
     return a.localeCompare(b);
   }
 
+  /**
+   * 指定したブロックとそのすべての子孫ブロック（サブツリー全体）を収集する
+   * @param {object[]} blocks ブロックの配列（昇順）
+   * @param {string} rootBlockId 開始点となる親ブロックID
+   * @returns {object[]} サブツリー全体のブロック配列
+   */
+  function getSubtreeBlocks(blocks, rootBlockId) {
+    if (!blocks || !rootBlockId) return [];
+    
+    const rootIdx = blocks.findIndex(b => b.id === rootBlockId);
+    if (rootIdx === -1) return [];
+
+    const rootBlock = blocks[rootIdx];
+    const rootLevel = rootBlock.level || 3;
+    const subtree = [rootBlock];
+
+    let idx = rootIdx + 1;
+    while (idx < blocks.length) {
+      const nextBlock = blocks[idx];
+      if ((nextBlock.level || 3) > rootLevel) {
+        subtree.push(nextBlock);
+        idx++;
+      } else {
+        break;
+      }
+    }
+    return subtree;
+  }
+
   return {
     escapeHtml,
     generateId,
     sanitizeFileName,
     excerpt,
     getCurrentDatetime,
-    compareCategories
+    compareCategories,
+    getSubtreeBlocks
   };
 })();

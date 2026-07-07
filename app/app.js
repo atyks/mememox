@@ -770,27 +770,13 @@ window.EntryMemo.App = (function () {
     const isSameEntry = currentEntry && currentEntry.categoryName === targetCategory && currentEntry.fileName === targetFileName;
 
     // 移動元ブロックと、その配下の子孫ブロック（サブツリー）を特定
-    const sourceIdx = currentEntry.blocks.findIndex(r => r.id === blockId);
-    if (sourceIdx === -1) {
+    const movingBlocks = Utils.getSubtreeBlocks(currentEntry.blocks, blockId);
+    if (movingBlocks.length === 0) {
       UI.showToast("移動対象のブロックが見つかりません。", "error");
       return;
     }
-
-    const sourceBlock = currentEntry.blocks[sourceIdx];
+    const sourceBlock = movingBlocks[0];
     const sourceLevel = sourceBlock.level || 3;
-
-    // 子孫ブロックを収集する
-    const movingBlocks = [sourceBlock];
-    let idx = sourceIdx + 1;
-    while (idx < currentEntry.blocks.length) {
-      const nextBlock = currentEntry.blocks[idx];
-      if ((nextBlock.level || 3) > sourceLevel) {
-        movingBlocks.push(nextBlock);
-        idx++;
-      } else {
-        break;
-      }
-    }
 
     UI.showLoading("ブロックを移動中...");
     try {

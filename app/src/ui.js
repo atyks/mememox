@@ -75,6 +75,36 @@ window.EntryMemo.UI = (function () {
     return flatList;
   };
 
+  /**
+   * 親ブロックの開閉状態に応じて、非表示にすべき子ブロックIDのSetを算出する
+   */
+  const calculateHiddenBlocks = (blocks) => {
+    const hiddenBlockIds = new Set();
+    const stack = []; // [{id, level}]
+    
+    // 親子関係の判定は、ソート順にかかわらず常にオリジナルの昇順順序で走査して判定する
+    blocks.forEach(rec => {
+      const level = rec.level || 3;
+      
+      while (stack.length > 0 && stack[stack.length - 1].level >= level) {
+        stack.pop();
+      }
+      
+      // スタックに残っているすべての先祖が「開いている（expanded）」状態であるか確認
+      const isVisible = stack.every(ancestor => expandedBlockIds.has(ancestor.id));
+      if (!isVisible) {
+        hiddenBlockIds.add(rec.id);
+      }
+      
+      stack.push({
+        id: rec.id,
+        level: level
+      });
+    });
+
+    return hiddenBlockIds;
+  };
+
   // デフォルトの多言語翻訳辞書定義
   const DefaultTranslations = {
     ja: {
@@ -2468,24 +2498,8 @@ window.EntryMemo.UI = (function () {
       // 除外するブロックIDのセットを作成（移動対象ブロック自身と、その配下の子孫ブロック）
       const excludeIds = new Set();
       if (isSameEntry && currentBlockId) {
-        excludeIds.add(currentBlockId);
-        
-        // 昇順に並んでいるので、currentBlockId の直後にある「自身よりレベルの深いブロック」を子孫とする
-        const startIdx = parsed.blocks.findIndex(b => b.id === currentBlockId);
-        if (startIdx !== -1) {
-          const selfBlock = parsed.blocks[startIdx];
-          const selfLevel = selfBlock.level || 3;
-          let idx = startIdx + 1;
-          while (idx < parsed.blocks.length) {
-            const nextBlock = parsed.blocks[idx];
-            if ((nextBlock.level || 3) > selfLevel) {
-              excludeIds.add(nextBlock.id);
-              idx++;
-            } else {
-              break;
-            }
-          }
-        }
+        const subtree = Utils.getSubtreeBlocks(parsed.blocks, currentBlockId);
+        subtree.forEach(b => excludeIds.add(b.id));
       }
 
       let options = [`<option value="">(第一階層のブロックとして追加)</option>`];
@@ -2671,28 +2685,7 @@ window.EntryMemo.UI = (function () {
     }
 
     // 祖先ブロックのスタックを使った非表示判定
-    const hiddenBlockIds = new Set();
-    const stack = []; // [{id, level}]
-    
-    // 親子関係の判定は、ソート順にかかわらず常にオリジナルの昇順順序で走査して判定する
-    blocks.forEach(rec => {
-      const level = rec.level || 3;
-      
-      while (stack.length > 0 && stack[stack.length - 1].level >= level) {
-        stack.pop();
-      }
-      
-      // スタックに残っているすべての先祖が「開いている（expanded）」状態であるか確認
-      const isVisible = stack.every(ancestor => expandedBlockIds.has(ancestor.id));
-      if (!isVisible) {
-        hiddenBlockIds.add(rec.id);
-      }
-      
-      stack.push({
-        id: rec.id,
-        level: level
-      });
-    });
+    const hiddenBlockIds = calculateHiddenBlocks(blocks);
 
     const displayBlocks = getDisplayBlocks(blocks, currentSortOrder);
 
