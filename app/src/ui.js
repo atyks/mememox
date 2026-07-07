@@ -2947,7 +2947,9 @@ window.EntryMemo.UI = (function () {
             expandedBlockIds.add(rec.id);
             localStorage.setItem("EntryMemo.expandedBlocks", JSON.stringify(Array.from(expandedBlockIds)));
             lastFocusedBlockId = child.id;
-            renderBlocksList(blocks, entryHasError);
+            setTimeout(() => {
+              renderBlocksList(blocks, entryHasError);
+            }, 0);
           });
           
           stackContainer.appendChild(previewCard);
