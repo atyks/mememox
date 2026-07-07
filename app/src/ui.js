@@ -1102,11 +1102,10 @@ window.EntryMemo.UI = (function () {
       });
     }
 
-    // ヘルプ（共通ヘッダーボタン - マニュアルを開く）
+    // ヘルプ（共通ヘッダーボタン - ヘルプパネルの開閉）
     if (elements.headerHelpBtn) {
       elements.headerHelpBtn.addEventListener("click", () => {
-        const manualFile = (currentLanguage === "ja") ? "how-to-use.ja.md" : "how-to-use.md";
-        window.open(manualFile, "_blank");
+        toggleHelpPanel();
       });
     }
 
