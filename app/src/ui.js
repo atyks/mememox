@@ -2818,10 +2818,11 @@ window.EntryMemo.UI = (function () {
       footer.className = "block-footer";
 
       const toggleExpand = () => {
+        const subtree = Utils.getSubtreeBlocks(blocks, rec.id);
         if (expandedBlockIds.has(rec.id)) {
-          expandedBlockIds.delete(rec.id);
+          subtree.forEach(b => expandedBlockIds.delete(b.id));
         } else {
-          expandedBlockIds.add(rec.id);
+          subtree.forEach(b => expandedBlockIds.add(b.id));
         }
         localStorage.setItem("EntryMemo.expandedBlocks", JSON.stringify(Array.from(expandedBlockIds)));
         renderBlocksList(blocks, entryHasError);
