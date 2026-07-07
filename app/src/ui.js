@@ -2905,6 +2905,56 @@ window.EntryMemo.UI = (function () {
 
       card.appendChild(footer);
       elements.blocksList.appendChild(card);
+
+      // 閉じているブロックかつ子ブロックが存在する場合、子ブロックのプレビュースタックをカードの直後に挿入する
+      const subtree = Utils.getSubtreeBlocks(blocks, rec.id);
+      const hasChildren = subtree.length > 1;
+
+      if (!isExpanded && hasChildren) {
+        const stackContainer = document.createElement("div");
+        stackContainer.className = "collapsed-children-stack";
+        
+        // 子孫ブロックの中から、最上位（最も浅いレベル）の子ブロックを抽出する
+        const descendants = subtree.slice(1);
+        const minLevel = Math.min(...descendants.map(b => b.level || 3));
+        const previewBlocks = descendants.filter(b => (b.level || 3) === minLevel);
+        
+        // 最大3件を重ねる
+        const displayPreviews = previewBlocks.slice(0, 3);
+        displayPreviews.forEach((child, idx) => {
+          const previewCard = document.createElement("div");
+          previewCard.className = `collapsed-child-preview`;
+          
+          // CSS変数によるレイアウトと重なりの制御
+          previewCard.style.setProperty("--stack-index", idx);
+          previewCard.style.setProperty("--parent-level", rec.level || 3);
+          
+          const icon = document.createElement("span");
+          icon.className = "collapsed-child-icon";
+          icon.textContent = "↳ ";
+          
+          const titleSpan = document.createElement("span");
+          titleSpan.className = "collapsed-child-title";
+          titleSpan.textContent = child.title || child.body.trim().substring(0, 20) || "(タイトルなし)";
+          
+          previewCard.appendChild(icon);
+          previewCard.appendChild(titleSpan);
+          
+          // プレビューをクリックした際は、親を展開し、この子ブロックへフォーカスを当てて再描画する
+          previewCard.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            expandedBlockIds.add(rec.id);
+            localStorage.setItem("EntryMemo.expandedBlocks", JSON.stringify(Array.from(expandedBlockIds)));
+            lastFocusedBlockId = child.id;
+            renderBlocksList(blocks, entryHasError);
+          });
+          
+          stackContainer.appendChild(previewCard);
+        });
+        
+        elements.blocksList.appendChild(stackContainer);
+      }
     });
 
     // 最後に編集・追加・マージ・削除されたブロックがある場合、それにフォーカスを合わせる

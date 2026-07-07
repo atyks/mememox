@@ -1400,3 +1400,73 @@ button, .btn {
   opacity: 0.8;
 }
 
+/* --- 折りたたまれた子ブロックのスタック表示 --- */
+.collapsed-children-stack {
+  position: relative;
+  margin-top: -8px; /* 親カードのすぐ下にめり込ませる */
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 0; /* 重なり効果のため gap は 0 にし、transform で制御 */
+}
+
+.collapsed-child-preview {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--color-bg-card, #ffffff);
+  border: 1px solid var(--color-border, #e0e0e0);
+  border-top: none; /* 親カードと一体化して見えるように上辺を消す */
+  border-radius: 0 0 6px 6px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  color: var(--color-text-muted, #666666);
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  
+  /* レベルに応じたインデントと幅の調整 */
+  margin-left: calc(var(--block-indent-step) * (var(--parent-level, 3) - 3) + 12px);
+  width: calc(100% - (var(--block-indent-step) * (var(--parent-level, 3) - 3) + 12px));
+
+  /* 重なり効果のための z-index と Y位置調整 */
+  z-index: calc(10 - var(--stack-index));
+  opacity: calc(1 - var(--stack-index) * 0.15);
+  transform: translateY(calc(var(--stack-index) * -4px)) scale(calc(1 - var(--stack-index) * 0.02));
+}
+
+/* ダークモード用の配色調整 */
+body.dark-mode .collapsed-child-preview {
+  background: #1e1e24;
+  border-color: #2e3035;
+  color: #a0a0a5;
+}
+
+/* ホバー時のWOWエフェクト（持ち上がるような感覚） */
+.collapsed-child-preview:hover {
+  background: var(--color-bg-card-hover, #f8f9fa);
+  color: var(--color-primary, #3b82f6);
+  transform: translateY(calc(var(--stack-index) * -4px - 4px)) scale(calc(1 - var(--stack-index) * 0.02 + 0.01));
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+body.dark-mode .collapsed-child-preview:hover {
+  background: #25272c;
+  color: #60a5fa;
+}
+
+.collapsed-child-icon {
+  margin-right: 6px;
+  font-weight: bold;
+  color: var(--color-primary, #3b82f6);
+  flex-shrink: 0;
+}
+
+.collapsed-child-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+
