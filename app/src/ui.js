@@ -1519,9 +1519,9 @@ window.EntryMemo.UI = (function () {
 
     // 移動先のカテゴリーが選択されたら、そのカテゴリーのエントリー一覧とブロック一覧をプルダウンに反映する
     elements.moveTargetCategory.addEventListener("change", async (e) => {
-      await updateMoveModalEntries(e.target.value);
+      const selectedFile = await updateMoveModalEntries(e.target.value);
       const blockId = elements.moveModal.dataset.blockId;
-      await updateMoveModalBlocks(e.target.value, elements.moveTargetEntry.value, blockId);
+      await updateMoveModalBlocks(e.target.value, selectedFile, blockId);
     });
 
     // 移動先のエントリーが選択されたら、そのエントリーのブロック一覧をプルダウンに反映する
@@ -2515,12 +2515,14 @@ window.EntryMemo.UI = (function () {
     const entries = await App.storage.listEntries(categoryName);
 
     let options = [];
+    const validEntries = [];
     for (const entry of entries) {
       try {
         const md = await App.storage.readEntry(categoryName, entry.fileName);
         const parsed = Markdown.parseEntry(md);
         if (parsed.errors.length === 0) {
           options.push(`<option value="${Utils.escapeHtml(entry.fileName)}">${Utils.escapeHtml(parsed.title || entry.fileName)}</option>`);
+          validEntries.push(entry.fileName);
         }
       } catch (e) {
       }
@@ -2528,8 +2530,11 @@ window.EntryMemo.UI = (function () {
 
     if (options.length === 0) {
       elements.moveTargetEntry.innerHTML = `<option value="">(移動可能なエントリーがありません)</option>`;
+      return null;
     } else {
       elements.moveTargetEntry.innerHTML = options.join("");
+      elements.moveTargetEntry.value = validEntries[0];
+      return validEntries[0];
     }
   }
 
@@ -2596,14 +2601,19 @@ window.EntryMemo.UI = (function () {
       elements.moveNewEntryCategory.value = currentEntry.categoryName;
     }
 
-    await updateMoveModalEntries(elements.moveTargetCategory.value);
+    const selectedFile = await updateMoveModalEntries(elements.moveTargetCategory.value);
     
+    let activeFile = selectedFile;
     if (currentEntry) {
-      elements.moveTargetEntry.value = currentEntry.fileName;
+      const hasCurrent = Array.from(elements.moveTargetEntry.options).some(opt => opt.value === currentEntry.fileName);
+      if (hasCurrent) {
+        elements.moveTargetEntry.value = currentEntry.fileName;
+        activeFile = currentEntry.fileName;
+      }
     }
     
     // エントリーがセットされたら、親ブロックリストを更新する
-    await updateMoveModalBlocks(elements.moveTargetCategory.value, elements.moveTargetEntry.value, block.id);
+    await updateMoveModalBlocks(elements.moveTargetCategory.value, activeFile, block.id);
     
     elements.moveNewEntryName.value = block.title;
 
