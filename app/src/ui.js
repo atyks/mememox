@@ -2945,7 +2945,11 @@ window.EntryMemo.UI = (function () {
           previewCard.addEventListener("click", (e) => {
             e.preventDefault();
             e.stopPropagation();
-            expandedBlockIds.add(rec.id);
+            
+            // 親とその配下の子孫ブロックもすべて展開状態（add）にする
+            const parentSubtree = Utils.getSubtreeBlocks(blocks, rec.id);
+            parentSubtree.forEach(b => expandedBlockIds.add(b.id));
+            
             localStorage.setItem("EntryMemo.expandedBlocks", JSON.stringify(Array.from(expandedBlockIds)));
             lastFocusedBlockId = child.id;
             setTimeout(() => {
