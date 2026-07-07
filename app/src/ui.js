@@ -238,7 +238,9 @@ window.EntryMemo.UI = (function () {
       confirmDeleteSelectedBlocks: "選択された ${count} 個のブロックを削除しますか？\n削除したブロックは元に戻せません。",
       confirmMergeSelectedBlocks: "選択された ${count} 件のブロックを1つにマージしますか？\nマージ後は元の各ブロックの見出しレベルが1段下がり、現在のエントリー内で1つのブロックに統合されます。",
       confirmDeleteBlockId: "このブロック [${id}] を削除しますか？\n削除したブロックは元に戻せません。",
-      autoReloadSuccess: "一定時間操作がなかったため、最新データを自動読み込みしました。"
+      autoReloadSuccess: "一定時間操作がなかったため、最新データを自動読み込みしました。",
+      allBlocksOpened: "すべてのブロックを展開しました。",
+      allBlocksClosed: "すべてのブロックを折りたたみました。"
     },
     en: {
       name: "English",
@@ -401,7 +403,9 @@ window.EntryMemo.UI = (function () {
       confirmDeleteSelectedBlocks: "Are you sure you want to delete the ${count} selected block(s)?\nThis action cannot be undone.",
       confirmMergeSelectedBlocks: "Are you sure you want to merge the ${count} selected block(s) into one?\nAfter merging, the heading levels of the original blocks will be lowered by one step and integrated into a single block within the current entry.",
       confirmDeleteBlockId: "Are you sure you want to delete this block [${id}]?\nThis action cannot be undone.",
-      autoReloadSuccess: "Data auto-reloaded due to inactivity."
+      autoReloadSuccess: "Data auto-reloaded due to inactivity.",
+      allBlocksOpened: "Expanded all blocks.",
+      allBlocksClosed: "Collapsed all blocks."
     }
   };
 
@@ -2096,6 +2100,24 @@ window.EntryMemo.UI = (function () {
                   cb.checked = !cb.checked;
                   updateMergeActionBar();
                 }
+              }
+            } else if (e.key === "o" || e.key === "O") {
+              e.preventDefault();
+              const currentEntry = window.EntryMemo.App.getCurrentEntry();
+              if (currentEntry && currentEntry.blocks.length > 0) {
+                currentEntry.blocks.forEach(b => expandedBlockIds.add(b.id));
+                localStorage.setItem("EntryMemo.expandedBlocks", JSON.stringify(Array.from(expandedBlockIds)));
+                renderBlocksList(currentEntry.blocks, currentEntry.hasError);
+                showToast(t("allBlocksOpened", "すべてのブロックを展開しました。"), "success");
+              }
+            } else if (e.key === "c" || e.key === "C") {
+              e.preventDefault();
+              const currentEntry = window.EntryMemo.App.getCurrentEntry();
+              if (currentEntry && currentEntry.blocks.length > 0) {
+                currentEntry.blocks.forEach(b => expandedBlockIds.delete(b.id));
+                localStorage.setItem("EntryMemo.expandedBlocks", JSON.stringify(Array.from(expandedBlockIds)));
+                renderBlocksList(currentEntry.blocks, currentEntry.hasError);
+                showToast(t("allBlocksClosed", "すべてのブロックを折りたたみました。"), "success");
               }
             } else if (match(e, "deleteEntry")) {
               e.preventDefault();
