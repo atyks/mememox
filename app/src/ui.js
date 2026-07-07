@@ -1462,9 +1462,26 @@ window.EntryMemo.UI = (function () {
           await window.EntryMemo.App.handleCreateBlock(title, body, parentBlockId);
           if (parentBlockId) {
             expandedBlockIds.add(parentBlockId);
-            localStorage.setItem("EntryMemo.expandedBlocks", JSON.stringify(Array.from(expandedBlockIds)));
+            
             const currentEntry = window.EntryMemo.App.getCurrentEntry();
             if (currentEntry) {
+              const blocks = currentEntry.blocks;
+              let parentIdx = blocks.findIndex(b => b.id === parentBlockId);
+              if (parentIdx !== -1) {
+                let currentLevel = blocks[parentIdx].level || 3;
+                for (let i = parentIdx - 1; i >= 0; i--) {
+                  const block = blocks[i];
+                  const blockLevel = block.level || 3;
+                  if (blockLevel < currentLevel) {
+                    expandedBlockIds.add(block.id);
+                    currentLevel = blockLevel;
+                    if (currentLevel <= 3) {
+                      break;
+                    }
+                  }
+                }
+              }
+              localStorage.setItem("EntryMemo.expandedBlocks", JSON.stringify(Array.from(expandedBlockIds)));
               renderBlocksList(currentEntry.blocks, currentEntry.hasError);
             }
           }
