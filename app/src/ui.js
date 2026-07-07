@@ -1460,6 +1460,10 @@ window.EntryMemo.UI = (function () {
         } else {
           const parentBlockId = elements.blockModal.dataset.parentBlockId;
           await window.EntryMemo.App.handleCreateBlock(title, body, parentBlockId);
+          if (parentBlockId) {
+            expandedBlockIds.add(parentBlockId);
+            localStorage.setItem("EntryMemo.expandedBlocks", JSON.stringify(Array.from(expandedBlockIds)));
+          }
         }
         closeModal();
       } catch (e) {
