@@ -2907,10 +2907,11 @@ window.EntryMemo.UI = (function () {
       elements.blocksList.appendChild(card);
 
       // 閉じているブロックかつ子ブロックが存在する場合、子ブロックのプレビュースタックをカードの直後に挿入する
+      const isHidden = hiddenBlockIds.has(rec.id);
       const subtree = Utils.getSubtreeBlocks(blocks, rec.id);
       const hasChildren = subtree.length > 1;
 
-      if (!isExpanded && hasChildren) {
+      if (!isExpanded && hasChildren && !isHidden) {
         const stackContainer = document.createElement("div");
         stackContainer.className = "collapsed-children-stack";
         
