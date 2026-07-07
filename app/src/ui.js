@@ -2228,9 +2228,25 @@ window.EntryMemo.UI = (function () {
   }
 
   function navigateCardFocus(direction) {
-    const cards = elements.blocksList.querySelectorAll(".block-card");
-    const totalCount = cards.length + 1;
+    const cards = Array.from(elements.blocksList.querySelectorAll(".block-card"));
+    
+    // 表示されている要素のリストを作成（概要セクション + 表示されているブロックカード）
+    const visibleTargets = [];
+    if (elements.summarySection) {
+      visibleTargets.push({ index: 0, element: elements.summarySection });
+    }
+    cards.forEach((card, idx) => {
+      if (card.style.display !== "none") {
+        visibleTargets.push({ index: idx + 1, element: card });
+      }
+    });
 
+    if (visibleTargets.length === 0) return;
+
+    // 現在のフォーカスがどの位置にあるか特定
+    let currentIdx = visibleTargets.findIndex(t => t.index === focusedBlockIndex);
+
+    // 既存のフォーカスを除去
     if (focusedBlockIndex === 0) {
       if (elements.summarySection) {
         elements.summarySection.classList.remove("focused");
@@ -2240,40 +2256,28 @@ window.EntryMemo.UI = (function () {
       if (prevCard) prevCard.classList.remove("focused");
     }
 
-    if (focusedBlockIndex === -1) {
+    // 次のインデックスを決定
+    if (currentIdx === -1) {
       if (direction === "next") {
-        focusedBlockIndex = 0;
+        currentIdx = 0;
       } else {
-        focusedBlockIndex = cards.length;
+        currentIdx = visibleTargets.length - 1;
       }
     } else {
       if (direction === "next") {
-        focusedBlockIndex++;
-        if (focusedBlockIndex >= totalCount) {
-          focusedBlockIndex = 0;
-        }
+        currentIdx = (currentIdx + 1) % visibleTargets.length;
       } else if (direction === "prev") {
-        focusedBlockIndex--;
-        if (focusedBlockIndex < 0) {
-          focusedBlockIndex = cards.length;
-        }
+        currentIdx = (currentIdx - 1 + visibleTargets.length) % visibleTargets.length;
       }
     }
 
-    if (focusedBlockIndex === 0) {
-      if (elements.summarySection) {
-        elements.summarySection.classList.add("focused");
-        elements.summarySection.setAttribute("tabindex", "-1");
-        elements.summarySection.focus();
-      }
-    } else if (focusedBlockIndex >= 1 && focusedBlockIndex <= cards.length) {
-      const targetCard = cards[focusedBlockIndex - 1];
-      if (targetCard) {
-        targetCard.classList.add("focused");
-        targetCard.setAttribute("tabindex", "-1");
-        targetCard.focus();
-      }
-    }
+    // フォーカスの適用
+    const target = visibleTargets[currentIdx];
+    focusedBlockIndex = target.index;
+    
+    target.element.classList.add("focused");
+    target.element.setAttribute("tabindex", "-1");
+    target.element.focus();
   }
 
   function navigateEntryCardFocus(direction) {
