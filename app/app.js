@@ -678,22 +678,49 @@ window.EntryMemo.App = (function () {
   /**
    * ブロックの追加
    */
-  async function handleCreateBlock(title, body) {
+  /**
+   * ブロックの追加
+   */
+  async function handleCreateBlock(title, body, parentBlockId = null) {
     if (isReadOnly()) return;
 
     UI.showLoading("ブロックを追加中...");
     try {
       const existingIds = await getAllExistingIds();
-      const newBlock = Markdown.createBlock(title, body, existingIds);
+      
+      let level = 3;
+      let insertIndex = activeEntryObj.blocks.length;
 
-      // 追加
-      activeEntryObj.blocks.push(newBlock);
+      if (parentBlockId) {
+        const parentIdx = activeEntryObj.blocks.findIndex(b => b.id === parentBlockId);
+        if (parentIdx !== -1) {
+          const parentBlock = activeEntryObj.blocks[parentIdx];
+          level = Math.min((parentBlock.level || 3) + 1, 6);
+          
+          // 挿入位置を探す: 親ブロックの次のブロックから順に、親ブロックより深いレベルのブロックが続く間進む
+          let idx = parentIdx + 1;
+          while (idx < activeEntryObj.blocks.length) {
+            const nextBlock = activeEntryObj.blocks[idx];
+            if ((nextBlock.level || 3) > (parentBlock.level || 3)) {
+              idx++;
+            } else {
+              break;
+            }
+          }
+          insertIndex = idx;
+        }
+      }
+
+      const newBlock = Markdown.createBlock(title, body, existingIds, level);
+
+      // 指定位置に挿入
+      activeEntryObj.blocks.splice(insertIndex, 0, newBlock);
 
       // 保存
       const md = Markdown.serializeEntry(activeEntryObj);
       await currentStorage.writeEntry(activeEntryObj.categoryName, activeEntryObj.fileName, md);
 
-      UI.showToast("新しいブロックを追加しました。", "success");
+      UI.showToast(parentBlockId ? "子ブロックを追加しました。" : "新しいブロックを追加しました。", "success");
       
       // 再描画の前に、UI側で新しく追加されたブロックにフォーカスを当てるように指示
       UI.setFocusedBlockId(newBlock.id);
@@ -734,71 +761,161 @@ window.EntryMemo.App = (function () {
   }
 
   /**
-   * ブロックの移動
+   * ブロックの移動（同一または別エントリーへの移動、およびぶら下げ先ブロックの変更）
    */
-  async function handleMoveBlock(blockId, targetCategory, targetFileName) {
+  async function handleMoveBlock(blockId, targetCategory, targetFileName, targetParentBlockId = null) {
     if (isReadOnly()) return;
 
-    if (activeEntryObj && activeEntryObj.categoryName === targetCategory && activeEntryObj.fileName === targetFileName) {
-      UI.showToast("移動先が現在のエントリーと同じです。自分自身へは移動できません。", "warning");
-      return;
-    }
+    const currentEntry = activeEntryObj;
+    const isSameEntry = currentEntry && currentEntry.categoryName === targetCategory && currentEntry.fileName === targetFileName;
 
-    const sourceBlock = activeEntryObj.blocks.find(r => r.id === blockId);
-    if (!sourceBlock) {
+    // 移動元ブロックと、その配下の子孫ブロック（サブツリー）を特定
+    const sourceIdx = currentEntry.blocks.findIndex(r => r.id === blockId);
+    if (sourceIdx === -1) {
       UI.showToast("移動対象のブロックが見つかりません。", "error");
       return;
     }
 
+    const sourceBlock = currentEntry.blocks[sourceIdx];
+    const sourceLevel = sourceBlock.level || 3;
+
+    // 子孫ブロックを収集する
+    const movingBlocks = [sourceBlock];
+    let idx = sourceIdx + 1;
+    while (idx < currentEntry.blocks.length) {
+      const nextBlock = currentEntry.blocks[idx];
+      if ((nextBlock.level || 3) > sourceLevel) {
+        movingBlocks.push(nextBlock);
+        idx++;
+      } else {
+        break;
+      }
+    }
+
     UI.showLoading("ブロックを移動中...");
     try {
-      // 1. 移動先のファイルを読み込み、パース
-      const targetMd = await currentStorage.readEntry(targetCategory, targetFileName);
-      const targetEntryParsed = Markdown.parseEntry(targetMd);
+      if (isSameEntry) {
+        // --- 同一エントリー内での移動（ぶら下げ先の変更） ---
+        
+        // 一旦、移動対象サブツリーをリストから除外した一時配列を作る
+        const remainingBlocks = currentEntry.blocks.filter(b => !movingBlocks.includes(b));
+        
+        let targetLevel = 3;
+        let insertIndex = remainingBlocks.length; // デフォルトは末尾
 
-      if (targetEntryParsed.errors.length > 0) {
-         UI.showToast("移動先エントリーにエラーがあるため、移動できません。", "error");
-         return;
-      }
+        if (targetParentBlockId) {
+          const parentIdx = remainingBlocks.findIndex(b => b.id === targetParentBlockId);
+          if (parentIdx !== -1) {
+            const parentBlock = remainingBlocks[parentIdx];
+            targetLevel = Math.min((parentBlock.level || 3) + 1, 6);
+            
+            // 親ブロックの直下にある、その親の子孫ブロック群の末尾を挿入位置とする
+            let childIdx = parentIdx + 1;
+            while (childIdx < remainingBlocks.length) {
+              const nextBlock = remainingBlocks[childIdx];
+              if ((nextBlock.level || 3) > (parentBlock.level || 3)) {
+                childIdx++;
+              } else {
+                break;
+              }
+            }
+            insertIndex = childIdx;
+          }
+        }
 
-      // 移動先の既存ID重複チェック
-      const duplicateId = targetEntryParsed.blocks.some(r => r.id === blockId);
-      if (duplicateId) {
-        UI.showToast(`移動先エントリーにすでに同じID [${blockId}] のブロックが存在します。移動できません。`, "error");
-        return;
-      }
+        // 移動するブロック群のレベルをシフトする
+        const levelDelta = targetLevel - sourceLevel;
+        movingBlocks.forEach(b => {
+          b.level = Math.max(3, Math.min((b.level || 3) + levelDelta, 6));
+        });
 
-      // 2. 移動先エントリーオブジェクトにブロックを追加
-      targetEntryParsed.blocks.push({
-        id: sourceBlock.id,
-        title: sourceBlock.title,
-        body: sourceBlock.body,
-        datetime: sourceBlock.datetime
-      });
+        // 決定した位置にサブツリーを再挿入
+        remainingBlocks.splice(insertIndex, 0, ...movingBlocks);
+        currentEntry.blocks = remainingBlocks;
 
-      // 3. 移動先エントリーのMarkdownシリアライズ＆書き込み
-      const targetSerialized = Markdown.serializeEntry(targetEntryParsed);
-      await currentStorage.writeEntry(targetCategory, targetFileName, targetSerialized);
+        // 保存
+        const md = Markdown.serializeEntry(currentEntry);
+        await currentStorage.writeEntry(currentEntry.categoryName, currentEntry.fileName, md);
 
-      // 4. 移動先の書き込みが100%成功した後、移動元から削除
-      let sourceRemovedSuccessfully = false;
-      try {
-        activeEntryObj.blocks = activeEntryObj.blocks.filter(r => r.id !== blockId);
-        const sourceSerialized = Markdown.serializeEntry(activeEntryObj);
-        await currentStorage.writeEntry(activeEntryObj.categoryName, activeEntryObj.fileName, sourceSerialized);
-        sourceRemovedSuccessfully = true;
-      } catch (removeErr) {
-        console.error(removeErr);
-        UI.showToast(
-          `警告: 移動先には保存されましたが、移動元からの削除に失敗しました。個別に対応してください。エラー: ${removeErr.message}`, 
-          "error"
+        UI.showToast("ブロックのぶら下げ先を変更しました。", "success");
+        UI.setFocusedBlockId(sourceBlock.id);
+        UI.renderCurrentEntry(currentEntry);
+
+      } else {
+        // --- 別のエントリーへの移動 ---
+        
+        // 移動先のファイルを読み込み、パース
+        const targetMd = await currentStorage.readEntry(targetCategory, targetFileName);
+        const targetEntryParsed = Markdown.parseEntry(targetMd);
+
+        if (targetEntryParsed.errors.length > 0) {
+           UI.showToast("移動先エントリーにエラーがあるため、移動できません。", "error");
+           return;
+        }
+
+        // 重複IDのチェック
+        const duplicateIds = movingBlocks.filter(mb => 
+          targetEntryParsed.blocks.some(tb => tb.id === mb.id)
         );
-      }
+        if (duplicateIds.length > 0) {
+          UI.showToast(`移動先エントリーにすでに同じIDのブロックが存在するため、移動できません。`, "error");
+          return;
+        }
 
-      if (sourceRemovedSuccessfully) {
-        UI.showToast("ブロックを別のエントリーに移動しました。", "success");
-        // 移動元エントリーを再描画して、移動したブロックが消えたことを反映
-        UI.renderCurrentEntry(activeEntryObj);
+        let targetLevel = 3;
+        let insertIndex = targetEntryParsed.blocks.length; // デフォルトは末尾
+
+        if (targetParentBlockId) {
+          const parentIdx = targetEntryParsed.blocks.findIndex(b => b.id === targetParentBlockId);
+          if (parentIdx !== -1) {
+            const parentBlock = targetEntryParsed.blocks[parentIdx];
+            targetLevel = Math.min((parentBlock.level || 3) + 1, 6);
+
+            let childIdx = parentIdx + 1;
+            while (childIdx < targetEntryParsed.blocks.length) {
+              const nextBlock = targetEntryParsed.blocks[childIdx];
+              if ((nextBlock.level || 3) > (parentBlock.level || 3)) {
+                childIdx++;
+              } else {
+                break;
+              }
+            }
+            insertIndex = childIdx;
+          }
+        }
+
+        // レベルのシフト
+        const levelDelta = targetLevel - sourceLevel;
+        movingBlocks.forEach(b => {
+          b.level = Math.max(3, Math.min((b.level || 3) + levelDelta, 6));
+        });
+
+        // 移動先への挿入
+        targetEntryParsed.blocks.splice(insertIndex, 0, ...movingBlocks);
+
+        // 移動先の保存
+        const targetSerialized = Markdown.serializeEntry(targetEntryParsed);
+        await currentStorage.writeEntry(targetCategory, targetFileName, targetSerialized);
+
+        // 移動元から削除して保存
+        let sourceRemovedSuccessfully = false;
+        try {
+          currentEntry.blocks = currentEntry.blocks.filter(b => !movingBlocks.includes(b));
+          const sourceSerialized = Markdown.serializeEntry(currentEntry);
+          await currentStorage.writeEntry(currentEntry.categoryName, currentEntry.fileName, sourceSerialized);
+          sourceRemovedSuccessfully = true;
+        } catch (removeErr) {
+          console.error(removeErr);
+          UI.showToast(
+            `警告: 移動先には保存されましたが、移動元からの削除に失敗しました。個別に対応してください。エラー: ${removeErr.message}`, 
+            "error"
+          );
+        }
+
+        if (sourceRemovedSuccessfully) {
+          UI.showToast("ブロックを別のエントリーに移動しました。", "success");
+          UI.renderCurrentEntry(currentEntry);
+        }
       }
     } catch (e) {
       console.error(e);

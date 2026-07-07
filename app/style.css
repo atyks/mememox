@@ -33,6 +33,7 @@
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --block-indent-step: 24px;
 }
 
 /* --- 全体リセット --- */
@@ -399,6 +400,17 @@ body {
   padding: 8px 12px;
   box-shadow: var(--shadow-sm);
   transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+/* 子ブロックの階層インデント */
+.block-card-level-4 {
+  margin-left: calc(var(--block-indent-step) * 1);
+}
+.block-card-level-5 {
+  margin-left: calc(var(--block-indent-step) * 2);
+}
+.block-card-level-6 {
+  margin-left: calc(var(--block-indent-step) * 3);
 }
 
 .block-card:hover {
@@ -817,6 +829,9 @@ button, .btn {
 
 /* --- レスポンシブレイアウト --- */
 @media (max-width: 768px) {
+  :root {
+    --block-indent-step: 12px;
+  }
   body {
     height: 100vh;
     height: 100dvh;

@@ -74,19 +74,24 @@ window.EntryMemo.Markdown = (function () {
       if (state === "SUMMARY") {
         summaryLines.push(line);
       } else if (state === "BLOCKS") {
-        // H3見出しの判定
-        if (line.startsWith("### ")) {
+        // H3〜H6見出しの判定
+        const headingMatch = line.match(/^(#{3,6})\s+/);
+        if (headingMatch) {
           // 直前のブロックがあれば結果に追加
           if (currentBlock) {
             result.blocks.push(currentBlock);
             currentBlock = null;
           }
 
-          const h3Content = line.substring(4).trim();
-          const idMatch = h3Content.match(/^\[([a-z0-9]+)\]/);
+          const hashes = headingMatch[1];
+          const level = hashes.length; // 3 to 6
+          const contentStartIdx = headingMatch[0].length;
+          const headingContent = line.substring(contentStartIdx).trim();
+
+          const idMatch = headingContent.match(/^\[([a-z0-9]+)\]/);
           if (idMatch) {
             const id = idMatch[1];
-            let rest = h3Content.substring(idMatch[0].length).trim();
+            let rest = headingContent.substring(idMatch[0].length).trim();
 
             // 日付パターン (yyyy-mm-dd hh:mm) をすべて抽出
             const dateRegex = /\d{4}-\d{2}-\d{2} \d{2}:\d{2}/g;
@@ -111,16 +116,18 @@ window.EntryMemo.Markdown = (function () {
 
             currentBlock = {
               id: id,
+              level: level,
               datetime: datetime,
               title: title || "",
               bodyLines: []
             };
           } else {
-            result.errors.push(`H3見出しのID形式が壊れています: "${line}"（形式: ### [xxxxx] タイトル）`);
+            result.errors.push(`見出しのID形式が壊れています: "${line}"（形式: ### [xxxxx] タイトル）`);
             // エラーを検出しつつもパースを続けるためのフォールバック
             currentBlock = {
               id: "error",
-              title: h3Content,
+              level: level,
+              title: headingContent,
               bodyLines: []
             };
           }
@@ -131,7 +138,7 @@ window.EntryMemo.Markdown = (function () {
           } else {
             // ## ブロック ヘッダーの直後で、かつ最初の H3 見出しが出現する前のコンテンツ
             if (line.trim() !== "") {
-              result.errors.push(`## ブロック の直後に、H3見出し以外のテキストがあります: "${line}"`);
+              result.errors.push(`## ブロック の直後に、ブロック見出し以外のテキストがあります: "${line}"`);
             }
           }
         }
@@ -147,6 +154,9 @@ window.EntryMemo.Markdown = (function () {
     result.blocks.forEach(rec => {
       rec.body = rec.bodyLines.join("\n").trim();
       delete rec.bodyLines;
+      if (rec.level === undefined) {
+        rec.level = 3;
+      }
     });
 
     // 概要の整理
@@ -185,7 +195,9 @@ window.EntryMemo.Markdown = (function () {
     md += `## ブロック\n`;
     
     entryObject.blocks.forEach(rec => {
-      let header = `### [${rec.id}]`;
+      const level = rec.level || 3;
+      const hashes = "#".repeat(level);
+      let header = `${hashes} [${rec.id}]`;
       if (rec.datetime) {
         header += ` ${rec.datetime}`;
       }
@@ -223,6 +235,9 @@ window.EntryMemo.Markdown = (function () {
         if (!rec.id || !/^[a-z0-9]{5}$/.test(rec.id)) {
           errors.push(`ブロックID "${rec.id || ""}" (位置: ${idx + 1}) の形式が壊れています。5文字の英小文字と数字のみ使用可能です。`);
         }
+        if (rec.level !== undefined && (rec.level < 3 || rec.level > 6)) {
+          errors.push(`見出しレベル "${rec.level}" (位置: ${idx + 1}) が不正です。3から6の範囲である必要があります。`);
+        }
         if (rec.id && ids.has(rec.id)) {
           errors.push(`重複したブロックID "${rec.id}" が検出されました。`);
         }
@@ -242,9 +257,10 @@ window.EntryMemo.Markdown = (function () {
    * @param {string} title 
    * @param {string} body 
    * @param {Set<string>|string[]} existingIds 
+   * @param {number} level
    * @returns {object}
    */
-  function createBlock(title, body, existingIds) {
+  function createBlock(title, body, existingIds, level = 3) {
     const finalTitle = (title || "").trim();
     const finalBody = (body || "").trim();
     
@@ -252,6 +268,7 @@ window.EntryMemo.Markdown = (function () {
     const datetime = window.EntryMemo.Utils.getCurrentDatetime();
     return {
       id: id,
+      level: level,
       datetime: datetime,
       title: finalTitle,
       body: finalBody
@@ -340,10 +357,10 @@ window.EntryMemo.Markdown = (function () {
       }
 
       // 一般のユーザー見出しのデモート処理
-      if (line.startsWith("### ")) {
-        return "#### " + line.substring(4);
-      } else if (line.startsWith("#### ")) {
-        return "##### " + line.substring(5);
+      const headingMatch = line.match(/^(#{3,5})\s+/);
+      if (headingMatch) {
+        const hashes = headingMatch[1];
+        return "#" + hashes + " " + line.substring(headingMatch[0].length);
       }
       return line;
     }).join("\n");
@@ -385,6 +402,7 @@ window.EntryMemo.Markdown = (function () {
 
     return {
       id: newId,
+      level: 3, // マージ後は常に第一階層の「ブロック」(H3) とする
       datetime: datetime,
       title: finalTitle,
       body: mergedBody.trim()

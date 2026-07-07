@@ -739,6 +739,7 @@ window.EntryMemo.UI = (function () {
       moveSourceInfo: document.getElementById("move-source-info"),
       moveTargetCategory: document.getElementById("move-target-category"),
       moveTargetEntry: document.getElementById("move-target-entry"),
+      moveTargetParentBlock: document.getElementById("move-target-parent-block"),
       moveNewEntryOption: document.getElementById("move-new-entry-option"),
       moveNewEntryForm: document.getElementById("move-new-entry-form"),
       moveNewEntryCategory: document.getElementById("move-new-entry-category"),
@@ -1218,6 +1219,30 @@ window.EntryMemo.UI = (function () {
       openBlockModal(null);
     };
 
+    const triggerAddChildBlock = () => {
+      const currentEntry = window.EntryMemo.App.getCurrentEntry();
+      if (!currentEntry || currentEntry.hasError) {
+        showToast(t("warningAddBlockUnsupported", "このエントリーにはブロックを追加できません。"), "warning");
+        return;
+      }
+
+      const cards = elements.blocksList.querySelectorAll(".block-card");
+      if (focusedBlockIndex >= 1 && focusedBlockIndex <= cards.length) {
+        const displayBlocks = currentSortOrder === "desc" ? [...currentEntry.blocks].reverse() : currentEntry.blocks;
+        const parentBlock = displayBlocks[focusedBlockIndex - 1];
+
+        if (parentBlock) {
+          if ((parentBlock.level || 3) >= 6) {
+            showToast(t("cannotAddChildToLevel6", "見出し6の下には子ブロックを追加できません。"), "warning");
+            return;
+          }
+          openBlockModal(null, parentBlock);
+        }
+      } else {
+        showToast(t("selectBlockToAddChild", "子ブロックを追加するには、対象のブロックを選択してください。"), "warning");
+      }
+    };
+
     elements.addBlockBtnTop.addEventListener("click", (e) => {
       if (isAddBlockLongPressed) {
         e.preventDefault();
@@ -1360,7 +1385,8 @@ window.EntryMemo.UI = (function () {
         if (editingBlockId) {
           await window.EntryMemo.App.handleUpdateBlock(editingBlockId, title, body);
         } else {
-          await window.EntryMemo.App.handleCreateBlock(title, body);
+          const parentBlockId = elements.blockModal.dataset.parentBlockId;
+          await window.EntryMemo.App.handleCreateBlock(title, body, parentBlockId);
         }
         closeModal();
       } catch (e) {
@@ -1384,9 +1410,17 @@ window.EntryMemo.UI = (function () {
       }
     });
 
-    // 移動先のカテゴリーが選択されたら、そのカテゴリーのエントリー一覧をプルダウンに反映する
+    // 移動先のカテゴリーが選択されたら、そのカテゴリーのエントリー一覧とブロック一覧をプルダウンに反映する
     elements.moveTargetCategory.addEventListener("change", async (e) => {
       await updateMoveModalEntries(e.target.value);
+      const blockId = elements.moveModal.dataset.blockId;
+      await updateMoveModalBlocks(e.target.value, elements.moveTargetEntry.value, blockId);
+    });
+
+    // 移動先のエントリーが選択されたら、そのエントリーのブロック一覧をプルダウンに反映する
+    elements.moveTargetEntry.addEventListener("change", async (e) => {
+      const blockId = elements.moveModal.dataset.blockId;
+      await updateMoveModalBlocks(elements.moveTargetCategory.value, e.target.value, blockId);
     });
 
     // 移動モーダル実行
@@ -1420,12 +1454,13 @@ window.EntryMemo.UI = (function () {
         } else {
           const category = elements.moveTargetCategory.value;
           const fileName = elements.moveTargetEntry.value;
+          const targetParentBlockId = elements.moveTargetParentBlock.value || null;
           if (!fileName) {
             showToast(t("selectTargetEntry", "移動先のエントリーを選択してください。"), "warning");
             return;
           }
           showLoading(t("movingBlock", "ブロックを移動中..."));
-          await window.EntryMemo.App.handleMoveBlock(blockId, category, fileName);
+          await window.EntryMemo.App.handleMoveBlock(blockId, category, fileName, targetParentBlockId);
           closeModal();
         }
       } catch (e) {
@@ -1913,7 +1948,14 @@ window.EntryMemo.UI = (function () {
           }
         }
       } else if (e.altKey) {
-        if (match(e, "navigateEntryNext")) {
+        if (e.key === "Enter" || e.code === "Enter") {
+          if (!isModalOpen && !isSummaryEditing) {
+            if (elements.entryDetailView.style.display === "flex") {
+              e.preventDefault();
+              triggerAddChildBlock();
+            }
+          }
+        } else if (match(e, "navigateEntryNext")) {
           e.preventDefault();
           window.EntryMemo.App.handleNavigateEntry("next");
         } else if (match(e, "navigateEntryPrev")) {
@@ -2288,15 +2330,22 @@ window.EntryMemo.UI = (function () {
   /**
    * ブロックの追加・編集モーダルを開く
    */
-  function openBlockModal(block = null) {
+  function openBlockModal(block = null, parentBlock = null) {
     blockModalEnterCount = 0;
     if (block) {
       elements.blockModalTitle.textContent = t("editBlockTitle", "ブロックを編集");
       elements.blockModal.dataset.editingBlockId = block.id;
+      delete elements.blockModal.dataset.parentBlockId;
       elements.blockInputTitle.value = block.title;
       elements.blockInputBody.value = block.body;
     } else {
-      elements.blockModalTitle.textContent = t("addBlockTitle", "ブロックを追加");
+      if (parentBlock) {
+        elements.blockModalTitle.textContent = t("addChildBlockTitle", "子ブロックを追加");
+        elements.blockModal.dataset.parentBlockId = parentBlock.id;
+      } else {
+        elements.blockModalTitle.textContent = t("addBlockTitle", "ブロックを追加");
+        delete elements.blockModal.dataset.parentBlockId;
+      }
       delete elements.blockModal.dataset.editingBlockId;
       elements.blockInputTitle.value = "";
       elements.blockInputBody.value = "";
@@ -2314,13 +2363,9 @@ window.EntryMemo.UI = (function () {
   async function updateMoveModalEntries(categoryName) {
     const App = window.EntryMemo.App;
     const entries = await App.storage.listEntries(categoryName);
-    const currentEntry = App.getCurrentEntry();
 
     let options = [];
     for (const entry of entries) {
-      const isSelf = currentEntry && currentEntry.categoryName === categoryName && currentEntry.fileName === entry.fileName;
-      if (isSelf) continue;
-
       try {
         const md = await App.storage.readEntry(categoryName, entry.fileName);
         const parsed = Markdown.parseEntry(md);
@@ -2335,6 +2380,61 @@ window.EntryMemo.UI = (function () {
       elements.moveTargetEntry.innerHTML = `<option value="">(移動可能なエントリーがありません)</option>`;
     } else {
       elements.moveTargetEntry.innerHTML = options.join("");
+    }
+  }
+
+  /**
+   * 移動先エントリーのブロック（親ブロック候補）一覧を更新する
+   */
+  async function updateMoveModalBlocks(categoryName, fileName, currentBlockId = null) {
+    if (!categoryName || !fileName) {
+      elements.moveTargetParentBlock.innerHTML = `<option value="">(第一階層のブロックとして追加)</option>`;
+      return;
+    }
+
+    try {
+      const App = window.EntryMemo.App;
+      const md = await App.storage.readEntry(categoryName, fileName);
+      const parsed = Markdown.parseEntry(md);
+      
+      const currentEntry = App.getCurrentEntry();
+      const isSameEntry = currentEntry && currentEntry.categoryName === categoryName && currentEntry.fileName === fileName;
+
+      // 除外するブロックIDのセットを作成（移動対象ブロック自身と、その配下の子孫ブロック）
+      const excludeIds = new Set();
+      if (isSameEntry && currentBlockId) {
+        excludeIds.add(currentBlockId);
+        
+        // 昇順に並んでいるので、currentBlockId の直後にある「自身よりレベルの深いブロック」を子孫とする
+        const startIdx = parsed.blocks.findIndex(b => b.id === currentBlockId);
+        if (startIdx !== -1) {
+          const selfBlock = parsed.blocks[startIdx];
+          const selfLevel = selfBlock.level || 3;
+          let idx = startIdx + 1;
+          while (idx < parsed.blocks.length) {
+            const nextBlock = parsed.blocks[idx];
+            if ((nextBlock.level || 3) > selfLevel) {
+              excludeIds.add(nextBlock.id);
+              idx++;
+            } else {
+              break;
+            }
+          }
+        }
+      }
+
+      let options = [`<option value="">(第一階層のブロックとして追加)</option>`];
+      for (const block of parsed.blocks) {
+        if (excludeIds.has(block.id)) continue;
+        if ((block.level || 3) >= 6) continue; // 見出し6は子を持てない
+
+        const indent = "　".repeat(Math.max(0, (block.level || 3) - 3));
+        const label = `${indent}[${block.id}] ${block.title || "(タイトルなし)"}`;
+        options.push(`<option value="${Utils.escapeHtml(block.id)}">${Utils.escapeHtml(label)}</option>`);
+      }
+      elements.moveTargetParentBlock.innerHTML = options.join("");
+    } catch (e) {
+      elements.moveTargetParentBlock.innerHTML = `<option value="">(第一階層のブロックとして追加)</option>`;
     }
   }
 
@@ -2363,6 +2463,10 @@ window.EntryMemo.UI = (function () {
     }
 
     await updateMoveModalEntries(elements.moveTargetCategory.value);
+    
+    // エントリーがセットされたら、親ブロックリストを更新する
+    await updateMoveModalBlocks(elements.moveTargetCategory.value, elements.moveTargetEntry.value, block.id);
+    
     elements.moveNewEntryName.value = block.title;
 
     openModal(elements.moveModal);
@@ -2497,12 +2601,40 @@ window.EntryMemo.UI = (function () {
       return;
     }
 
+    // 祖先ブロックのスタックを使った非表示判定
+    const hiddenBlockIds = new Set();
+    const stack = []; // [{id, level}]
+    
+    // 親子関係の判定は、ソート順にかかわらず常にオリジナルの昇順順序で走査して判定する
+    blocks.forEach(rec => {
+      const level = rec.level || 3;
+      
+      while (stack.length > 0 && stack[stack.length - 1].level >= level) {
+        stack.pop();
+      }
+      
+      // スタックに残っているすべての先祖が「開いている（expanded）」状態であるか確認
+      const isVisible = stack.every(ancestor => expandedBlockIds.has(ancestor.id));
+      if (!isVisible) {
+        hiddenBlockIds.add(rec.id);
+      }
+      
+      stack.push({
+        id: rec.id,
+        level: level
+      });
+    });
+
     const displayBlocks = currentSortOrder === "desc" ? [...blocks].reverse() : blocks;
 
     displayBlocks.forEach(rec => {
       const card = document.createElement("div");
-      card.className = "block-card";
+      card.className = `block-card block-card-level-${rec.level || 3}`;
       card.id = `block-card-${rec.id}`;
+
+      if (hiddenBlockIds.has(rec.id)) {
+        card.style.display = "none";
+      }
 
       const isExpanded = expandedBlockIds.has(rec.id);
 
@@ -2558,20 +2690,13 @@ window.EntryMemo.UI = (function () {
       footer.className = "block-footer";
 
       const toggleExpand = () => {
-        if (fullTextPre.style.display === "none") {
-          fullTextPre.style.display = "block";
-          textDiv.style.display = "none";
-          openBtn.textContent = "閉じる";
-          card.classList.add("expanded");
-          expandedBlockIds.add(rec.id);
-        } else {
-          fullTextPre.style.display = "none";
-          textDiv.style.display = "block";
-          openBtn.textContent = "開く";
-          card.classList.remove("expanded");
+        if (expandedBlockIds.has(rec.id)) {
           expandedBlockIds.delete(rec.id);
+        } else {
+          expandedBlockIds.add(rec.id);
         }
         localStorage.setItem("EntryMemo.expandedBlocks", JSON.stringify(Array.from(expandedBlockIds)));
+        renderBlocksList(blocks, entryHasError);
       };
 
       const openBtn = document.createElement("button");
@@ -2599,6 +2724,18 @@ window.EntryMemo.UI = (function () {
           openBlockModal(rec);
         });
         footer.appendChild(editBtn);
+
+        // レベル6未満の場合のみ「子ブロック追加」ボタンを追加
+        if ((rec.level || 3) < 6) {
+          const addChildBtn = document.createElement("button");
+          addChildBtn.className = "btn-secondary btn-sm";
+          addChildBtn.textContent = "子ブロック追加";
+          addChildBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            openBlockModal(null, rec);
+          });
+          footer.appendChild(addChildBtn);
+        }
 
         const moveBtn = document.createElement("button");
         moveBtn.className = "btn-secondary btn-sm";
