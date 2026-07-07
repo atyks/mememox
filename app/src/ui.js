@@ -2771,6 +2771,7 @@ window.EntryMemo.UI = (function () {
       
       const headerLeft = document.createElement("div");
       headerLeft.className = "block-header-left";
+      headerLeft.style.cursor = "pointer";
 
       const selectCheckbox = document.createElement("input");
       selectCheckbox.type = "checkbox";
@@ -2781,7 +2782,6 @@ window.EntryMemo.UI = (function () {
 
       const titleSpan = document.createElement("span");
       titleSpan.className = "block-title";
-      titleSpan.style.cursor = "pointer";
       let dateHtml = "";
       if (rec.datetime) {
         dateHtml = ` <span class="block-datetime" style="color: var(--text-muted); font-size: 12px; margin-right: 6px; font-family: var(--font-mono);">${Utils.escapeHtml(rec.datetime)}</span>`;
@@ -2837,7 +2837,8 @@ window.EntryMemo.UI = (function () {
       });
       footer.appendChild(openBtn);
 
-      titleSpan.addEventListener("click", (e) => {
+      headerLeft.addEventListener("click", (e) => {
+        if (e.target.tagName.toLowerCase() === "input") return;
         if (window.getSelection().toString()) return;
         toggleExpand();
       });
