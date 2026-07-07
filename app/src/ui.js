@@ -36,6 +36,45 @@ window.EntryMemo.UI = (function () {
     return tag === "input" || tag === "textarea" || activeEl.isContentEditable;
   };
 
+  // 階層構造（ツリー）を維持したまま、第一階層（見出し3）のみソート順を適用して平坦化されたリストを取得する
+  const getDisplayBlocks = (blocks, sortOrder) => {
+    if (!blocks || blocks.length === 0) return [];
+
+    const roots = [];
+    const stack = []; // [{node, level}]
+
+    blocks.forEach(block => {
+      const level = block.level || 3;
+      const node = { block: block, children: [] };
+
+      while (stack.length > 0 && stack[stack.length - 1].level >= level) {
+        stack.pop();
+      }
+
+      if (stack.length > 0) {
+        stack[stack.length - 1].node.children.push(node);
+      } else {
+        roots.push(node);
+      }
+
+      stack.push({ node: node, level: level });
+    });
+
+    if (sortOrder === "desc") {
+      roots.reverse();
+    }
+
+    const flatList = [];
+    function flatten(nodes) {
+      nodes.forEach(node => {
+        flatList.push(node.block);
+        flatten(node.children);
+      });
+    }
+    flatten(roots);
+    return flatList;
+  };
+
   // デフォルトの多言語翻訳辞書定義
   const DefaultTranslations = {
     ja: {
@@ -1228,7 +1267,7 @@ window.EntryMemo.UI = (function () {
 
       const cards = elements.blocksList.querySelectorAll(".block-card");
       if (focusedBlockIndex >= 1 && focusedBlockIndex <= cards.length) {
-        const displayBlocks = currentSortOrder === "desc" ? [...currentEntry.blocks].reverse() : currentEntry.blocks;
+        const displayBlocks = getDisplayBlocks(currentEntry.blocks, currentSortOrder);
         const parentBlock = displayBlocks[focusedBlockIndex - 1];
 
         if (parentBlock) {
@@ -1672,7 +1711,7 @@ window.EntryMemo.UI = (function () {
             const blockIds = checkedBoxes.map(cb => cb.dataset.recordId);
             const currentEntry = window.EntryMemo.App.getCurrentEntry();
             if (currentEntry) {
-              const displayBlocks = currentSortOrder === "desc" ? [...currentEntry.blocks].reverse() : currentEntry.blocks;
+              const displayBlocks = getDisplayBlocks(currentEntry.blocks, currentSortOrder);
               const checkedIds = new Set(blockIds);
               const remainingBlocks = displayBlocks.filter(b => !checkedIds.has(b.id));
               if (remainingBlocks.length > 0) {
@@ -2625,7 +2664,7 @@ window.EntryMemo.UI = (function () {
       });
     });
 
-    const displayBlocks = currentSortOrder === "desc" ? [...blocks].reverse() : blocks;
+    const displayBlocks = getDisplayBlocks(blocks, currentSortOrder);
 
     displayBlocks.forEach(rec => {
       const card = document.createElement("div");
