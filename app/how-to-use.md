@@ -103,6 +103,7 @@ Press `?` (Shift + `/`) on your keyboard outside of input fields to open the sho
 * `Ctrl + E` : Edit current entry (renaming title or moving category)
 * `Shift + D` / `Delete` : Delete current entry (relocates to Trash, or deletes permanently if inside Trash)
 * `Ctrl + Enter` / `A` (except inputs) : Open the add block modal
+* `Alt + Enter` : Open the add child block modal under the selected block
 * `Ctrl + I` : Edit the Summary section directly
 * `Ctrl + H` : Navigate back to the parent category list
 * `Ctrl + J` / `K` : Switch category view (next/prev)
@@ -116,6 +117,8 @@ Press `?` (Shift + `/`) on your keyboard outside of input fields to open the sho
 * `M` (Unchecked blocks) : Relocate selected block card to another entry
 * `D` : Delete the selected block card
 * `X` : Toggle block selection for merging
+* `O` : Expand all blocks/child blocks
+* `C` : Collapse all blocks/child blocks
 * `M` (Checked blocks) : Execute block merge directly
 
 ### D. Inside Modals
