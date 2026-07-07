@@ -53,9 +53,18 @@ Root Directory/
 * Pinned at the top of each entry, the Summary records current directions, pending items, or final decisions.
 * Textareas **autosize dynamically** based on text length to eliminate scroll bars inside inputs.
 
+### 🧱 Hierarchical Blocks & Accordion (Collapse)
+* Blocks are rendered in a nested hierarchical tree based on heading levels (H3 to H6) with automatic indentation.
+* Click the "Open/Close" button or the card itself (or shortcut `Space` key) to collapse nested child blocks.
+* Keyboard navigation (J/K keys) automatically skips collapsed (hidden) child cards.
+
+### 🎴 3D Card Stack Preview
+* When a parent block is collapsed, its nested child blocks (up to 3) are visually stacked behind the parent card in a 3D design layout.
+* The titles of the collapsed child blocks peek through from behind. Clicking a preview card automatically expands the parent block and focuses the child block immediately.
+
 ### 📝 Block Cards
-* Each individual note block displays as a discrete card.
 * Creating a block assigns a unique alphanumeric ID (e.g., `[a73bc]`) and a creation timestamp automatically.
+* When adding a "child block" (`Alt + Enter` or cards action button), it is automatically created at one level deeper (H4 to H6) relative to the parent block.
 * Textareas auto-expand and collapse in real-time.
 
 ### ⭐ Favorites Syncing
@@ -68,18 +77,17 @@ Root Directory/
 ### 🗺️ Breadcrumb Links
 * The details page header renders a 3-tier breadcrumb: `All ＞ [Category Name] ＞ [Entry Title]`. Click a parent tier to jump back to its respective list.
 
-### 🗑️ Relocating & Guarding Trash
-* Deleting an entry relocates the Markdown file to the **`Trash`** (or `ゴミ箱`) category directory instead of erasing it permanently.
-* Entries under the Trash category cannot be favorited; their stars change to a disabled 🗑️ trash bin icon.
-* Deleting a note while it is inside the Trash category triggers a confirmation prompt to erase the file permanently.
+### 🗑️ Relocating & Guarding Trash / Deletion Warnings
+* **Entry Deletion**: Deleting an entry relocates the Markdown file to the **`Trash`** category instead of erasing it permanently.
+* **Block Deletion Warnings**: Deleting or batch-deleting parent blocks that contain child blocks triggers a warning dialog: "Nested child blocks will also be deleted." Confirming will recursively erase child blocks to prevent orphaned data.
 
 ### ✏️ Editing Entries (Relocate & Rename)
 * Modifying an entry's title rewrites the file's H1 title and renames the physical `.md` filename on disk.
 * Re-categorize entries by choosing a category from the dropdown or typing a new folder name to relocate them instantly.
 
-### 🤝 Merging Blocks
-* Merge multiple blocks (using checkboxes) to extract them into a new entry or append them to an existing entry.
-* Original block headers automatically demote by one level upon export. The source block remains untouched until the target save is fully verified.
+### 🤝 Relocating & Merging Blocks
+* **Block Movement**: Relocate block cards to another position (as a child block) or a different entry. Moving parent blocks carries over the entire nested child blocks hierarchy and automatically shifts levels.
+* **Merging Blocks**: Merge multiple blocks to extract them into a new entry or append them to an existing entry. Source nested child blocks are safely merged into the merged block's body (with headings demoted) and cleaned up from the source entry.
 
 ### 📱 Swipe Gestures
 * On touch-capable mobile devices, swipe left or right across the main content area (minimum 80px transition) to toggle between the list and detail views. Gestures are disabled when inputs are focused.
@@ -130,3 +138,4 @@ Press `?` (Shift + `/`) on your keyboard outside of input fields to open the sho
 ## ⚠️ Known Constraints
 * Designed and optimized for Chromium-based web browsers (Microsoft Edge, Google Chrome).
 * Custom files that do not adhere to the designated Markdown format (H1 title, `## Summary`, `## Block`, and metadata comments on H3 headers) will open in **Read-Only Mode**.
+* The maximum nesting depth is Level 6 (H6). You cannot create child blocks under a Level 6 block, and any card movements that would result in Level 7 or deeper are restricted.

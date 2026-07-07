@@ -5,6 +5,16 @@ English | [日本語 (Japanese)](README.ja.md)
 `mememox` is a lightweight, secure, and card-based block structure note system using Markdown files as the data store.
 It is optimized for both PC browsers and smartphones, allowing you to manage your notes securely by hosting them locally or on an isolated server via APIs.
 
+## Key Features
+
+* **Summary & Pinned Directions**: Keep your conclusions/directions pinned at the top, and log details in individual card blocks below.
+* **Hierarchical Indented Blocks**: Organize logs inside a tree structure using Markdown heading levels (H3 to H6).
+* **Accordion Collapse & 3D Card Stack Previews**: Toggle visibility of nested cards. Collapsed parent cards render child previews in a physical 3D stack design.
+- **Intelligent Relocate & Merge**: Move parent blocks recursively to other notes, or merge selected blocks with heading level auto-adaptation.
+* **Safe Deletion**: Relocates entries to the Trash category, and warns with alert dialogs when deleting parent blocks with children.
+* **In-Memory Cache & Fast API Sync**: Ultra-fast performance under Server Mode. Supports mobile Pull-to-refresh.
+* **Full Keyboard Shortcuts**: Built-in shortcut mapping system with an interactive `?` help panel.
+
 ## Directory Structure
 
 * `app/` - Frontend Static Web Application
