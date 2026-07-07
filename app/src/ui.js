@@ -10,6 +10,9 @@ window.EntryMemo.UI = (function () {
   // 開いたブロックIDの記憶
   let expandedBlockIds = new Set();
 
+  // 選択されたマージ用ブロックIDの記憶
+  let checkedBlockIds = new Set();
+
   // フォーカスされているブロックカードのインデックス
   let focusedBlockIndex = -1;
 
@@ -2182,8 +2185,7 @@ window.EntryMemo.UI = (function () {
                 const targetCard = cards[focusedBlockIndex - 1];
                 const cb = targetCard.querySelector(".block-select-checkbox");
                 if (cb) {
-                  cb.checked = !cb.checked;
-                  updateMergeActionBar();
+                  cb.click();
                 }
               }
             } else if (e.key === "o" || e.key === "O") {
@@ -2635,6 +2637,9 @@ window.EntryMemo.UI = (function () {
       elements.mainContent.style.display = "none";
       return;
     }
+    
+    // エントリーの新規ロードまたは切り替え時にチェック状態をクリア
+    checkedBlockIds.clear();
 
     elements.mainContent.style.display = "block";
     elements.entryDetailView.style.display = "flex";
@@ -2777,7 +2782,20 @@ window.EntryMemo.UI = (function () {
       selectCheckbox.type = "checkbox";
       selectCheckbox.className = "block-select-checkbox";
       selectCheckbox.dataset.recordId = rec.id;
-      selectCheckbox.addEventListener("change", updateMergeActionBar);
+      
+      // 以前の選択状態を復元
+      if (checkedBlockIds.has(rec.id)) {
+        selectCheckbox.checked = true;
+      }
+      
+      selectCheckbox.addEventListener("change", (e) => {
+        if (e.target.checked) {
+          checkedBlockIds.add(rec.id);
+        } else {
+          checkedBlockIds.delete(rec.id);
+        }
+        updateMergeActionBar();
+      });
       headerLeft.appendChild(selectCheckbox);
 
       const titleSpan = document.createElement("span");
