@@ -1463,6 +1463,10 @@ window.EntryMemo.UI = (function () {
           if (parentBlockId) {
             expandedBlockIds.add(parentBlockId);
             localStorage.setItem("EntryMemo.expandedBlocks", JSON.stringify(Array.from(expandedBlockIds)));
+            const currentEntry = window.EntryMemo.App.getCurrentEntry();
+            if (currentEntry) {
+              renderBlocksList(currentEntry.blocks, currentEntry.hasError);
+            }
           }
         }
         closeModal();
