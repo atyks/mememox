@@ -2781,6 +2781,7 @@ window.EntryMemo.UI = (function () {
 
       const titleSpan = document.createElement("span");
       titleSpan.className = "block-title";
+      titleSpan.style.cursor = "pointer";
       let dateHtml = "";
       if (rec.datetime) {
         dateHtml = ` <span class="block-datetime" style="color: var(--text-muted); font-size: 12px; margin-right: 6px; font-family: var(--font-mono);">${Utils.escapeHtml(rec.datetime)}</span>`;
@@ -2835,11 +2836,8 @@ window.EntryMemo.UI = (function () {
       });
       footer.appendChild(openBtn);
 
-      card.addEventListener("click", (e) => {
-        const targetTag = e.target.tagName.toLowerCase();
-        if (targetTag === "button" || targetTag === "input" || targetTag === "a" || window.getSelection().toString()) {
-          return;
-        }
+      titleSpan.addEventListener("click", (e) => {
+        if (window.getSelection().toString()) return;
         toggleExpand();
       });
 
