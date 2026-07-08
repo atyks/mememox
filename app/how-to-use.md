@@ -64,7 +64,7 @@ Root Directory/
 
 ### 📝 Block Cards
 * Creating a block assigns a unique alphanumeric ID (e.g., `[a73bc]`) and a creation timestamp automatically.
-* When adding a "child block" (`Alt + Enter` or cards action button), it is automatically created at one level deeper (H4 to H6) relative to the parent block.
+* When adding a "child block" (`Shift + Enter` or cards action button), it is automatically created at one level deeper (H4 to H6) relative to the parent block.
 * Textareas auto-expand and collapse in real-time.
 
 ### ⭐ Favorites Syncing
@@ -111,7 +111,7 @@ Press `?` (Shift + `/`) on your keyboard outside of input fields to open the sho
 * `Ctrl + E` : Edit current entry (renaming title or moving category)
 * `Shift + D` / `Delete` : Delete current entry (relocates to Trash, or deletes permanently if inside Trash)
 * `Ctrl + Enter` / `A` (except inputs) : Open the add block modal
-* `Alt + Enter` : Open the add child block modal under the selected block
+* `Shift + Enter` : Open the add child block modal under the selected block
 * `Ctrl + I` : Edit the Summary section directly
 * `Ctrl + H` : Navigate back to the parent category list
 * `Ctrl + J` / `K` : Switch category view (next/prev)
@@ -127,6 +127,8 @@ Press `?` (Shift + `/`) on your keyboard outside of input fields to open the sho
 * `X` : Toggle block selection for merging
 * `O` : Expand all blocks/child blocks
 * `C` : Collapse all blocks/child blocks
+* `Shift + O` : Expand all nested child blocks under the selected block
+* `Shift + C` : Collapse all nested child blocks under the selected block
 * `M` (Checked blocks) : Execute block merge directly
 
 ### D. Inside Modals

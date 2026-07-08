@@ -226,7 +226,7 @@ window.EntryMemo.UI = (function () {
       helpItemEditEntry: "エントリーの編集",
       helpItemDeleteEntry: "エントリーの削除 (ゴミ箱へ移動)",
       helpItemAddBlock: "ブロック追加ポップアップを開く (Aは非入力時)",
-      helpItemAddChildBlock: "選択中のブロックに子ブロックを追加 (Alt + Enter)",
+      helpItemAddChildBlock: "選択中のブロックに子ブロックを追加 (Shift + Enter)",
       helpItemEditSummary: "概要セクションの編集",
       helpItemShowAll: "カテゴリーのエントリー一覧を表示",
       helpItemNavigateCategory: "カテゴリーの切り替え / エントリー一覧へ",
@@ -241,6 +241,8 @@ window.EntryMemo.UI = (function () {
       helpItemCardSelectMerge: "マージ対象として選択 / 解除",
       helpItemCardExpandAll: "すべてのブロックを展開 (O)",
       helpItemCardCollapseAll: "すべてのブロックを折りたたむ (C)",
+      helpItemOpenChildBlocks: "選択中のブロック配下の子ブロックをすべて開く (Shift + o)",
+      helpItemCloseChildBlocks: "選択中のブロック配下の子ブロックをすべて閉じる (Shift + c)",
       helpItemModalSave: "保存して閉じる",
       helpItemModalCancel: "保存せずに閉じる",
       markdownPreviewTitle: "📄 Markdownプレビュー",
@@ -278,7 +280,9 @@ window.EntryMemo.UI = (function () {
       confirmDeleteBlockWithChildren: "このブロック [${id}] には子ブロックが含まれています。\n削除すると、配下の子ブロックもすべて一緒に削除されます。\n\n本当に削除しますか？",
       autoReloadSuccess: "一定時間操作がなかったため、最新データを自動読み込みしました。",
       allBlocksOpened: "すべてのブロックを展開しました。",
-      allBlocksClosed: "すべてのブロックを折りたたみました。"
+      allBlocksClosed: "すべてのブロックを折りたたみました。",
+      childBlocksOpened: "子ブロックを展開しました。",
+      childBlocksClosed: "子ブロックを折りたたみました。"
     },
     en: {
       name: "English",
@@ -396,7 +400,7 @@ window.EntryMemo.UI = (function () {
       helpItemEditEntry: "Edit Entry",
       helpItemDeleteEntry: "Delete Entry (Move to Trash)",
       helpItemAddBlock: "Open Add Block Dialog (A key when idle)",
-      helpItemAddChildBlock: "Add a child block to the selected block (Alt + Enter)",
+      helpItemAddChildBlock: "Add a child block to the selected block (Shift + Enter)",
       helpItemEditSummary: "Edit Summary Section",
       helpItemShowAll: "Show Category Entries List",
       helpItemNavigateCategory: "Navigate Categories / List",
@@ -411,6 +415,8 @@ window.EntryMemo.UI = (function () {
       helpItemCardSelectMerge: "Select/Deselect for Merge",
       helpItemCardExpandAll: "Expand all blocks (O)",
       helpItemCardCollapseAll: "Collapse all blocks (C)",
+      helpItemOpenChildBlocks: "Expand all nested child blocks under the selected block (Shift + o)",
+      helpItemCloseChildBlocks: "Collapse all nested child blocks under the selected block (Shift + c)",
       helpItemModalSave: "Save and Close",
       helpItemModalCancel: "Close Without Saving",
       markdownPreviewTitle: "📄 Markdown Preview",
@@ -448,7 +454,9 @@ window.EntryMemo.UI = (function () {
       confirmDeleteBlockWithChildren: "This block [${id}] contains child blocks.\nAll nested child blocks will also be deleted.\n\nAre you sure you want to delete?",
       autoReloadSuccess: "Data auto-reloaded due to inactivity.",
       allBlocksOpened: "Expanded all blocks.",
-      allBlocksClosed: "Collapsed all blocks."
+      allBlocksClosed: "Collapsed all blocks.",
+      childBlocksOpened: "Expanded nested child blocks.",
+      childBlocksClosed: "Collapsed nested child blocks."
     }
   };
 
@@ -2078,15 +2086,47 @@ window.EntryMemo.UI = (function () {
             }
           }
         }
-      } else if (e.altKey) {
-        if (e.key === "Enter" || e.code === "Enter") {
-          if (!isModalOpen && !isSummaryEditing) {
+      } else if (e.shiftKey) {
+        if (!isModalOpen && !isSummaryEditing) {
+          if (e.key === "Enter" || e.code === "Enter") {
             if (elements.entryDetailView.style.display === "flex") {
               e.preventDefault();
               triggerAddChildBlock();
             }
+          } else if (e.key === "o" || e.key === "O") {
+            e.preventDefault();
+            const currentEntry = window.EntryMemo.App.getCurrentEntry();
+            if (currentEntry && focusedBlockIndex >= 1) {
+              const cards = elements.blocksList.querySelectorAll(".block-card");
+              const targetCard = cards[focusedBlockIndex - 1];
+              const rec = currentEntry.blocks.find(b => b.id === targetCard.dataset.recordId);
+              if (rec) {
+                const subtree = Utils.getSubtreeBlocks(currentEntry.blocks, rec.id);
+                subtree.forEach(b => expandedBlockIds.add(b.id));
+                localStorage.setItem("EntryMemo.expandedBlocks", JSON.stringify(Array.from(expandedBlockIds)));
+                renderBlocksList(currentEntry.blocks, currentEntry.hasError);
+                showToast(t("childBlocksOpened", "子ブロックを展開しました。"), "success");
+              }
+            }
+          } else if (e.key === "c" || e.key === "C") {
+            e.preventDefault();
+            const currentEntry = window.EntryMemo.App.getCurrentEntry();
+            if (currentEntry && focusedBlockIndex >= 1) {
+              const cards = elements.blocksList.querySelectorAll(".block-card");
+              const targetCard = cards[focusedBlockIndex - 1];
+              const rec = currentEntry.blocks.find(b => b.id === targetCard.dataset.recordId);
+              if (rec) {
+                const subtree = Utils.getSubtreeBlocks(currentEntry.blocks, rec.id);
+                subtree.forEach(b => expandedBlockIds.delete(b.id));
+                localStorage.setItem("EntryMemo.expandedBlocks", JSON.stringify(Array.from(expandedBlockIds)));
+                renderBlocksList(currentEntry.blocks, currentEntry.hasError);
+                showToast(t("childBlocksClosed", "子ブロックを折りたたみました。"), "success");
+              }
+            }
           }
-        } else if (match(e, "navigateEntryNext")) {
+        }
+      } else if (e.altKey) {
+        if (match(e, "navigateEntryNext")) {
           e.preventDefault();
           window.EntryMemo.App.handleNavigateEntry("next");
         } else if (match(e, "navigateEntryPrev")) {
@@ -2942,7 +2982,7 @@ window.EntryMemo.UI = (function () {
           
           // CSS変数によるレイアウトと重なりの制御
           previewCard.style.setProperty("--stack-index", idx);
-          previewCard.style.setProperty("--parent-level", rec.level || 3);
+          previewCard.style.setProperty("--child-level", child.level || 3);
           
           const icon = document.createElement("span");
           icon.className = "collapsed-child-icon";
