@@ -2991,9 +2991,17 @@ window.EntryMemo.UI = (function () {
           icon.className = "collapsed-child-icon";
           icon.textContent = "↳ ";
           
+          // 直属の子ブロックの配下にある孫ブロックのタイトルも含めてインラインで連結表示する
+          const childSubtree = Utils.getSubtreeBlocks(blocks, child.id);
+          let titleText = child.title || child.body.trim().substring(0, 20) || "(タイトルなし)";
+          if (childSubtree.length > 1) {
+            const nestedTitles = childSubtree.slice(1).map(b => b.title || b.body.trim().substring(0, 15) || "(タイトルなし)");
+            titleText += " ↳ " + nestedTitles.join(" ↳ ");
+          }
+          
           const titleSpan = document.createElement("span");
           titleSpan.className = "collapsed-child-title";
-          titleSpan.textContent = child.title || child.body.trim().substring(0, 20) || "(タイトルなし)";
+          titleSpan.textContent = titleText;
           
           previewCard.appendChild(icon);
           previewCard.appendChild(titleSpan);
