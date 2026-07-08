@@ -2102,10 +2102,14 @@ window.EntryMemo.UI = (function () {
               const rec = currentEntry.blocks.find(b => b.id === targetCard.dataset.recordId);
               if (rec) {
                 const subtree = Utils.getSubtreeBlocks(currentEntry.blocks, rec.id);
+                const currentSize = expandedBlockIds.size;
                 subtree.forEach(b => expandedBlockIds.add(b.id));
-                localStorage.setItem("EntryMemo.expandedBlocks", JSON.stringify(Array.from(expandedBlockIds)));
-                renderBlocksList(currentEntry.blocks, currentEntry.hasError);
-                showToast(t("childBlocksOpened", "子ブロックを展開しました。"), "success");
+                const newSize = expandedBlockIds.size;
+                if (newSize > currentSize) {
+                  localStorage.setItem("EntryMemo.expandedBlocks", JSON.stringify(Array.from(expandedBlockIds)));
+                  renderBlocksList(currentEntry.blocks, currentEntry.hasError);
+                  showToast(t("childBlocksOpened", "子ブロックを展開しました。"), "success");
+                }
               }
             }
           } else if (e.key === "c" || e.key === "C") {
@@ -2117,10 +2121,14 @@ window.EntryMemo.UI = (function () {
               const rec = currentEntry.blocks.find(b => b.id === targetCard.dataset.recordId);
               if (rec) {
                 const subtree = Utils.getSubtreeBlocks(currentEntry.blocks, rec.id);
+                const currentSize = expandedBlockIds.size;
                 subtree.forEach(b => expandedBlockIds.delete(b.id));
-                localStorage.setItem("EntryMemo.expandedBlocks", JSON.stringify(Array.from(expandedBlockIds)));
-                renderBlocksList(currentEntry.blocks, currentEntry.hasError);
-                showToast(t("childBlocksClosed", "子ブロックを折りたたみました。"), "success");
+                const newSize = expandedBlockIds.size;
+                if (newSize < currentSize) {
+                  localStorage.setItem("EntryMemo.expandedBlocks", JSON.stringify(Array.from(expandedBlockIds)));
+                  renderBlocksList(currentEntry.blocks, currentEntry.hasError);
+                  showToast(t("childBlocksClosed", "子ブロックを折りたたみました。"), "success");
+                }
               }
             }
           }
@@ -2232,19 +2240,27 @@ window.EntryMemo.UI = (function () {
               e.preventDefault();
               const currentEntry = window.EntryMemo.App.getCurrentEntry();
               if (currentEntry && currentEntry.blocks.length > 0) {
+                const currentSize = expandedBlockIds.size;
                 currentEntry.blocks.forEach(b => expandedBlockIds.add(b.id));
-                localStorage.setItem("EntryMemo.expandedBlocks", JSON.stringify(Array.from(expandedBlockIds)));
-                renderBlocksList(currentEntry.blocks, currentEntry.hasError);
-                showToast(t("allBlocksOpened", "すべてのブロックを展開しました。"), "success");
+                const newSize = expandedBlockIds.size;
+                if (newSize > currentSize) {
+                  localStorage.setItem("EntryMemo.expandedBlocks", JSON.stringify(Array.from(expandedBlockIds)));
+                  renderBlocksList(currentEntry.blocks, currentEntry.hasError);
+                  showToast(t("allBlocksOpened", "すべてのブロックを展開しました。"), "success");
+                }
               }
             } else if (e.key === "c" || e.key === "C") {
               e.preventDefault();
               const currentEntry = window.EntryMemo.App.getCurrentEntry();
               if (currentEntry && currentEntry.blocks.length > 0) {
+                const currentSize = expandedBlockIds.size;
                 currentEntry.blocks.forEach(b => expandedBlockIds.delete(b.id));
-                localStorage.setItem("EntryMemo.expandedBlocks", JSON.stringify(Array.from(expandedBlockIds)));
-                renderBlocksList(currentEntry.blocks, currentEntry.hasError);
-                showToast(t("allBlocksClosed", "すべてのブロックを折りたたみました。"), "success");
+                const newSize = expandedBlockIds.size;
+                if (newSize < currentSize) {
+                  localStorage.setItem("EntryMemo.expandedBlocks", JSON.stringify(Array.from(expandedBlockIds)));
+                  renderBlocksList(currentEntry.blocks, currentEntry.hasError);
+                  showToast(t("allBlocksClosed", "すべてのブロックを折りたたみました。"), "success");
+                }
               }
             } else if (match(e, "deleteEntry")) {
               e.preventDefault();
