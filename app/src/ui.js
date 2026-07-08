@@ -2973,35 +2973,23 @@ window.EntryMemo.UI = (function () {
         const stackContainer = document.createElement("div");
         stackContainer.className = "collapsed-children-stack";
         
-        // 直属の子ブロック（親のレベル + 1）のみをプレビューの対象にする
-        const parentLevel = rec.level || 3;
-        const targetLevel = parentLevel + 1;
+        // 配下の子孫ブロック（レベル問わず）から出現順に最大5件をプレビューカードとして表示する
         const descendants = subtree.slice(1);
-        const previewBlocks = descendants.filter(b => (b.level || 3) === targetLevel);
-        const displayPreviews = previewBlocks.slice(0, 3);
+        const displayPreviews = descendants.slice(0, 5);
         displayPreviews.forEach((child, idx) => {
           const previewCard = document.createElement("div");
           previewCard.className = `collapsed-child-preview`;
           
-          // CSS変数によるレイアウトと重なりの制御
-          previewCard.style.setProperty("--stack-index", idx);
+          // CSS変数による自身の見出しレベルの設定
           previewCard.style.setProperty("--child-level", child.level || 3);
           
           const icon = document.createElement("span");
           icon.className = "collapsed-child-icon";
           icon.textContent = "↳ ";
           
-          // 直属の子ブロックの配下にある孫ブロックのタイトルも含めてインラインで連結表示する
-          const childSubtree = Utils.getSubtreeBlocks(blocks, child.id);
-          let titleText = child.title || child.body.trim().substring(0, 20) || "(タイトルなし)";
-          if (childSubtree.length > 1) {
-            const nestedTitles = childSubtree.slice(1).map(b => b.title || b.body.trim().substring(0, 15) || "(タイトルなし)");
-            titleText += " ↳ " + nestedTitles.join(" ↳ ");
-          }
-          
           const titleSpan = document.createElement("span");
           titleSpan.className = "collapsed-child-title";
-          titleSpan.textContent = titleText;
+          titleSpan.textContent = child.title || child.body.trim().substring(0, 30) || "(タイトルなし)";
           
           previewCard.appendChild(icon);
           previewCard.appendChild(titleSpan);
