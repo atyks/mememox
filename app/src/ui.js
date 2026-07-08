@@ -2973,9 +2973,12 @@ window.EntryMemo.UI = (function () {
         const stackContainer = document.createElement("div");
         stackContainer.className = "collapsed-children-stack";
         
-        // 配下の子孫ブロック（レベル問わず）から出現順に最大3件をスタックプレビューとして表示する
+        // 直属の子ブロック（親のレベル + 1）のみをプレビューの対象にする
+        const parentLevel = rec.level || 3;
+        const targetLevel = parentLevel + 1;
         const descendants = subtree.slice(1);
-        const displayPreviews = descendants.slice(0, 3);
+        const previewBlocks = descendants.filter(b => (b.level || 3) === targetLevel);
+        const displayPreviews = previewBlocks.slice(0, 3);
         displayPreviews.forEach((child, idx) => {
           const previewCard = document.createElement("div");
           previewCard.className = `collapsed-child-preview`;
