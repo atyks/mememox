@@ -282,7 +282,9 @@ window.EntryMemo.UI = (function () {
       allBlocksOpened: "すべてのブロックを展開しました。",
       allBlocksClosed: "すべてのブロックを折りたたみました。",
       childBlocksOpened: "子ブロックを展開しました。",
-      childBlocksClosed: "子ブロックを折りたたみました。"
+      childBlocksClosed: "子ブロックを折りたたみました。",
+      closeAllBlocksTitle: "すべてのブロックを折りたたむ",
+      closeAllBlocks: "すべて閉じる"
     },
     en: {
       name: "English",
@@ -456,7 +458,9 @@ window.EntryMemo.UI = (function () {
       allBlocksOpened: "Expanded all blocks.",
       allBlocksClosed: "Collapsed all blocks.",
       childBlocksOpened: "Expanded nested child blocks.",
-      childBlocksClosed: "Collapsed nested child blocks."
+      childBlocksClosed: "Collapsed nested child blocks.",
+      closeAllBlocksTitle: "Collapse all blocks",
+      closeAllBlocks: "Collapse All"
     }
   };
 
@@ -788,6 +792,7 @@ window.EntryMemo.UI = (function () {
       
       entryMarkdownViewBtn: document.getElementById("entry-markdown-view-btn"),
       sortBlocksBtn: document.getElementById("sort-blocks-btn"),
+      closeAllBlocksBtn: document.getElementById("close-all-blocks-btn"),
       
       // Markdownプレビューパネル
       markdownPreviewPanel: document.getElementById("markdown-preview-panel"),
@@ -1096,6 +1101,23 @@ window.EntryMemo.UI = (function () {
         const currentEntry = window.EntryMemo.App.getCurrentEntry();
         if (currentEntry) {
           renderBlocksList(currentEntry.blocks, currentEntry.hasError);
+        }
+      });
+    }
+
+    // すべてのブロックを折りたたむ
+    if (elements.closeAllBlocksBtn) {
+      elements.closeAllBlocksBtn.addEventListener("click", () => {
+        const currentEntry = window.EntryMemo.App.getCurrentEntry();
+        if (currentEntry && currentEntry.blocks.length > 0) {
+          const currentSize = expandedBlockIds.size;
+          currentEntry.blocks.forEach(b => expandedBlockIds.delete(b.id));
+          const newSize = expandedBlockIds.size;
+          if (newSize < currentSize) {
+            localStorage.setItem("EntryMemo.expandedBlocks", JSON.stringify(Array.from(expandedBlockIds)));
+            renderBlocksList(currentEntry.blocks, currentEntry.hasError);
+            showToast(t("allBlocksClosed", "すべてのブロックを折りたたみました。"), "success");
+          }
         }
       });
     }
@@ -2856,11 +2878,7 @@ window.EntryMemo.UI = (function () {
 
       const titleSpan = document.createElement("span");
       titleSpan.className = "block-title";
-      let dateHtml = "";
-      if (rec.datetime) {
-        dateHtml = ` <span class="block-datetime" style="color: var(--text-muted); font-size: 12px; margin-right: 6px; font-family: var(--font-mono);">${Utils.escapeHtml(rec.datetime)}</span>`;
-      }
-      titleSpan.innerHTML = `<span class="block-id">[${Utils.escapeHtml(rec.id)}]</span>${dateHtml}${Utils.escapeHtml(rec.title)}`;
+      titleSpan.innerHTML = `<span class="block-id">[${Utils.escapeHtml(rec.id)}]</span> ${Utils.escapeHtml(rec.title)}`;
       headerLeft.appendChild(titleSpan);
       
       header.appendChild(headerLeft);
