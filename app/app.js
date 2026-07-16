@@ -483,6 +483,9 @@ window.EntryMemo.App = (function () {
         });
       }
 
+      const fsStorage = new Storage.FileSystemStorage(dirHandle);
+      const hasCategories = await fsStorage.init();
+
       if (!hasCategories) {
         const confirmCreate = confirm(UI.t("confirmInitialStructure", "このフォルダに初期構造を作成しますか？"));
 
